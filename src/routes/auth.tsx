@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/br-ui";
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function SignIn() {
+  const navigate = useNavigate();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   if (!isSupabaseConfigured()) {
@@ -62,13 +63,40 @@ function SignIn() {
     setBusy(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: String(form.get("email") ?? "").trim(),
-      password: String(form.get("password") ?? ""),
-    });
-    setBusy(false);
-    if (authError)
-      setError("Sign-in failed. Check your credentials or ask an administrator for access.");
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: String(form.get("email") ?? "").trim(),
+        password: String(form.get("password") ?? ""),
+      });
+      if (authError || !data.user) {
+        setError("Sign-in failed. Check your email and password, then try again.");
+        return;
+      }
+
+      const { data: roles, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+
+      if (roleError) {
+        setError(
+          "Your credentials were accepted, but the workspace role could not be checked. Confirm that the database migrations have been applied, then try again.",
+        );
+        return;
+      }
+      if (!roles?.length) {
+        setError(
+          "Your credentials were accepted, but this account has no workspace role yet. Add an Admin role to this account in Supabase, then sign in again.",
+        );
+        return;
+      }
+
+      await navigate({ to: "/radar", replace: true });
+    } catch {
+      setError("We could not complete sign-in. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
