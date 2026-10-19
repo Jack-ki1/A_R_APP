@@ -76,6 +76,17 @@ function PipelinePage() {
           Drag cards between stages, or use the stage menu on each card. Signing is a human decision
           — only Head of A&R or Admin can mark Signed.
         </p>
+        <nav className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Artist workspace">
+          <Link to="/artists" search={{ q: undefined }} className="text-primary hover:underline">
+            Artist roster
+          </Link>
+          <Link to="/development" className="text-primary hover:underline">
+            Development plans
+          </Link>
+          <Link to="/integrity" className="text-primary hover:underline">
+            Growth checks
+          </Link>
+        </nav>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-4">
         {STAGES.map((s) => {

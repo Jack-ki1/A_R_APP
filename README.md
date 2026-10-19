@@ -96,15 +96,17 @@ Supabase migrations, login/RLS role matrix, provider rights, hosted deployment, 
 
 ## Product map
 
-The application has five primary navigation areas.
+The application has five primary navigation sections.
 
-| Navigation area | Purpose | Routes included |
+| Navigation section | Purpose | Routes included |
 | --- | --- | --- |
 | Home | Landing intelligence overview and current activity | `/radar` |
-| Artists | Candidate discovery, artist records, pipeline, development, and integrity checks | `/artists`, `/discover`, `/pipeline`, `/development`, `/integrity` |
+| Find artists | MusicBrainz search, identity verification, and candidate intake | `/discover` |
+| Pipeline | Artist tracking workspace: pipeline board, roster, development plans, integrity checks | `/pipeline`, `/artists`, `/development`, `/integrity` |
 | Audience | Aggregate audience comparison and permitted fan-content status | `/audience`, `/ugc` |
 | Settings | Sources, reports, alerts, and forecast/backtest readiness | `/settings`, `/sources`, `/reports`, `/alerts`, `/predictions`, `/backtesting` |
-| Authentication | Invite-only sign-in entry point | `/auth` |
+
+The sidebar shows only these five entries. Sub-pages are reached through links inside their parent page (Pipeline links to the roster, development plans, and growth checks; Audience links to fan content; Settings links to data sources, reports, alerts, and readiness pages) and remain listed in the mobile sections menu.
 
 There is no standalone Reviews route. The former review page was removed from the product navigation and source tree.
 
@@ -126,17 +128,17 @@ The Home route is not a substitute for the sourced observation table on an artis
 
 ### Artists
 
-Artists is the operational center of the product.
+The artist roster is the operational center of the product.
 
 It lists monitored canonical artists and omits demo rows from normal operational queries.
 
-The search field in the header sends users to this area.
+The search field in the header sends users to this area, which is linked from the Pipeline page rather than shown as a separate sidebar entry.
 
 Artist cards expose identity, location, stage, integrity state, and any available legacy display metrics.
 
 The artist profile is the place to inspect source-linked observations, compatible audience snapshots, notes, and workflow context.
 
-The Artists navigation group also contains discovery, pipeline, development plans, and growth checks.
+The related workspace pages — discovery, pipeline, development plans, and growth checks — are reached from the Find artists and Pipeline sidebar sections.
 
 ### Discovery
 
@@ -150,7 +152,7 @@ Momentum and growth thresholds are opt-in checkboxes. Unknown momentum or growth
 
 ### Pipeline
 
-The pipeline is part of the Artists navigation group.
+The pipeline is a top-level navigation section and the home of the artist tracking workspace.
 
 It is a kanban-style operational view of pipeline stages.
 
@@ -170,7 +172,7 @@ The page is an operational checklist, not an artist-performance measurement syst
 
 ### Growth checks
 
-Growth checks are the integrity workflow under Artists.
+Growth checks are the integrity workflow, linked from the Pipeline page.
 
 An integrity case is a prompt for a human investigation.
 
@@ -502,9 +504,9 @@ The source tree has no `review.tsx` route.
 | `artists.index.tsx` | `/artists` | Artist list and filtered search results. |
 | `artists.$id.tsx` | `/artists/:id` | Canonical artist profile, observations, cohorts, events, and notes. |
 | `discover.tsx` | `/discover` | Existing artist discovery filters and saved searches. |
-| `pipeline.tsx` | `/pipeline` | Artist pipeline board; grouped under Artists navigation. |
-| `development.tsx` | `/development` | Artist development task plans; grouped under Artists navigation. |
-| `integrity.tsx` | `/integrity` | Growth integrity cases; grouped under Artists navigation. |
+| `pipeline.tsx` | `/pipeline` | Artist pipeline board; top-level Pipeline section. |
+| `development.tsx` | `/development` | Artist development task plans; linked from Pipeline. |
+| `integrity.tsx` | `/integrity` | Growth integrity cases; linked from Pipeline. |
 | `audience.tsx` | `/audience` | Aggregate audience snapshot overview. |
 | `ugc.tsx` | `/ugc` | Explicit not-connected UGC state. |
 | `settings.tsx` | `/settings` | Administration and hub for supporting tools. |

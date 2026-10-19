@@ -41,6 +41,9 @@ function AudiencePage() {
             period length, quality and rights status. Aggregate changes do not track individual
             people.
           </p>
+          <Link to="/ugc" className="mt-2 inline-block text-sm text-primary hover:underline">
+            Fan content (UGC) status →
+          </Link>
         </div>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Choose artist">

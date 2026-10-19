@@ -6,8 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { Compass, Gauge, Users, Search, PieChart, Settings, LogOut, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Compass, Gauge, Search, Kanban, PieChart, Settings, LogOut } from "lucide-react";
 import { Logo } from "@/components/br-ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -35,46 +34,36 @@ export const Route = createFileRoute("/_authenticated")({
 
 const NAV = [
   { to: "/radar", label: "Home", icon: Gauge },
+  { to: "/discover", label: "Find artists", icon: Search },
   {
-    to: "/artists",
-    label: "Artists",
-    icon: Users,
-    children: [
-      { to: "/discover", label: "Find artists" },
-      { to: "/pipeline", label: "Artist pipeline" },
-      { to: "/development", label: "Development plans" },
-      { to: "/integrity", label: "Growth checks" },
-    ],
+    to: "/pipeline",
+    label: "Pipeline",
+    icon: Kanban,
+    match: ["/artists", "/development", "/integrity"],
   },
-  {
-    to: "/audience",
-    label: "Audience",
-    icon: PieChart,
-    children: [{ to: "/ugc", label: "Fan content" }],
-  },
-  {
-    to: "/settings",
-    label: "Settings",
-    icon: Settings,
-    children: [
-      { to: "/predictions", label: "Forecast readiness" },
-      { to: "/backtesting", label: "Backtest readiness" },
-      { to: "/reports", label: "Reports & exports" },
-      { to: "/alerts", label: "Alerts" },
-      { to: "/sources", label: "Data sources" },
-    ],
-  },
+  { to: "/audience", label: "Audience", icon: PieChart, match: ["/ugc"] },
+  { to: "/settings", label: "Settings", icon: Settings },
+] as const;
+
+const SUB_PAGES = [
+  { to: "/artists", label: "Artist roster" },
+  { to: "/development", label: "Development plans" },
+  { to: "/integrity", label: "Growth checks" },
+  { to: "/ugc", label: "Fan content" },
+  { to: "/sources", label: "Data sources" },
+  { to: "/reports", label: "Reports & exports" },
+  { to: "/alerts", label: "Alerts" },
+  { to: "/predictions", label: "Forecast readiness" },
+  { to: "/backtesting", label: "Backtest readiness" },
 ] as const;
 
 function Shell() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const [collapsedGroup, setCollapsedGroup] = useState<string | null>(null);
-  const destinations = NAV.flatMap((group) => [
-    { to: group.to, label: group.label },
-    ...("children" in group ? group.children.map((child) => child) : []),
-  ]);
+  const destinations = [
+    ...NAV.map((group) => ({ to: group.to, label: group.label })),
+    ...SUB_PAGES,
+  ];
 
   return (
     <div className="flex min-h-screen">
@@ -84,69 +73,20 @@ function Shell() {
           {NAV.map((group) => {
             const active =
               path.startsWith(group.to) ||
-              ("children" in group && group.children.some((child) => path.startsWith(child.to)));
-            const expanded =
-              "children" in group &&
-              (openGroup === group.label || (active && collapsedGroup !== group.label));
+              ("match" in group && group.match.some((prefix) => path.startsWith(prefix)));
             return (
-              <div key={group.to}>
-                <div className="flex items-center">
-                  <Link
-                    to={group.to}
-                    onClick={() => {
-                      setOpenGroup(group.label);
-                      setCollapsedGroup(null);
-                    }}
-                    className={cn(
-                      "flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      active
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground glow"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent",
-                    )}
-                  >
-                    <group.icon className="size-4 shrink-0" /> {group.label}
-                  </Link>
-                  {"children" in group && (
-                    <button
-                      type="button"
-                      aria-label={`${expanded ? "Hide" : "Show"} ${group.label} pages`}
-                      aria-expanded={expanded}
-                      onClick={() => {
-                        if (expanded) {
-                          setOpenGroup(null);
-                          setCollapsedGroup(group.label);
-                        } else {
-                          setCollapsedGroup(null);
-                          setOpenGroup(group.label);
-                        }
-                      }}
-                      className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <ChevronDown
-                        className={cn("size-4 transition-transform", expanded && "rotate-180")}
-                      />
-                    </button>
-                  )}
-                </div>
-                {"children" in group && expanded && (
-                  <div className="ml-5 space-y-0.5 border-l border-sidebar-border pl-3 pt-1">
-                    {group.children.map((child) => (
-                      <Link
-                        key={child.to}
-                        to={child.to}
-                        className={cn(
-                          "block rounded-md px-3 py-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          path.startsWith(child.to)
-                            ? "bg-sidebar-accent font-medium text-sidebar-foreground"
-                            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                        )}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
+              <Link
+                key={group.to}
+                to={group.to}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground glow"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent",
                 )}
-              </div>
+              >
+                <group.icon className="size-4 shrink-0" /> {group.label}
+              </Link>
             );
           })}
         </nav>
