@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { makeArtist } from "@/test/fixtures";
 import { Route as DiscoverRoute } from "@/routes/_authenticated/discover";
 import { Route as RadarRoute } from "@/routes/_authenticated/radar";
+import { Route as SettingsRoute } from "@/routes/_authenticated/settings";
 
 const db = vi.hoisted(() => ({
   artists: [] as unknown[],
@@ -71,10 +72,13 @@ function renderPage(component: PageComponent) {
   const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component });
   const childRoutes = [
     { path: "/discover" as const },
-    { path: "/sources" as const },
+    { path: "/settings" as const },
     { path: "/pipeline" as const },
     { path: "/artists/$id" as const },
     { path: "/audience" as const },
+    { path: "/development" as const },
+    { path: "/integrity" as const },
+    { path: "/ugc" as const },
     { path: "/radar" as const },
   ].map(({ path }) =>
     createRoute({ getParentRoute: () => rootRoute, path, component: () => null }),
@@ -102,6 +106,17 @@ beforeEach(() => {
   db.data_sources = [];
 });
 
+/**
+ * The cohort panel on Discover. Queries are scoped to it because the roster panel below
+ * renders the same artist names a second time.
+ */
+async function cohortPanel() {
+  const heading = await screen.findByRole("heading", { name: "Discover" });
+  const section = heading.closest("section");
+  if (!section) throw new Error("Discover cohort panel not found");
+  return within(section);
+}
+
 describe("Discover page", () => {
   beforeEach(() => {
     db.artists = [
@@ -114,42 +129,56 @@ describe("Discover page", () => {
 
   it("lists unscored, unmeasured artists by default", async () => {
     renderPage(pageComponent(DiscoverRoute));
-    expect(await screen.findByText("Newcomer")).toBeInTheDocument();
-    expect(screen.getByText("Rising")).toBeInTheDocument();
-    expect(screen.getByText("Flagged")).toBeInTheDocument();
-    expect(screen.queryByText("Fixture")).not.toBeInTheDocument();
-    const allTab = screen.getByRole("button", { name: /All tracked/ });
+    const cohort = await cohortPanel();
+    expect(cohort.getByText("Newcomer")).toBeInTheDocument();
+    expect(cohort.getByText("Rising")).toBeInTheDocument();
+    expect(cohort.getByText("Flagged")).toBeInTheDocument();
+    expect(cohort.queryByText("Fixture")).not.toBeInTheDocument();
+    const allTab = cohort.getByRole("button", { name: /All tracked/ });
     expect(allTab.textContent).toContain("3");
     expect(allTab.getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("keeps the full roster on the same page as the cohort view", async () => {
+    renderPage(pageComponent(DiscoverRoute));
+    expect(await screen.findByRole("heading", { name: "Monitored roster" })).toBeInTheDocument();
+    const roster = within(
+      screen.getByRole("heading", { name: "Monitored roster" }).closest("section")!,
+    );
+    // The roster shows every artist, demo fixtures included.
+    expect(roster.getByText("Fixture")).toBeInTheDocument();
+    fireEvent.change(roster.getByLabelText("Filter artists"), { target: { value: "Rising" } });
+    expect(roster.getByText("Rising")).toBeInTheDocument();
+    expect(roster.queryByText("Newcomer")).not.toBeInTheDocument();
+  });
+
   it("moves unmeasured artists out of Growth-qualified without dropping them", async () => {
     renderPage(pageComponent(DiscoverRoute));
-    await screen.findByText("Newcomer");
-    fireEvent.click(screen.getByRole("button", { name: /Growth-qualified/ }));
-    expect(screen.queryByText("Newcomer")).not.toBeInTheDocument();
-    expect(screen.getByText("Rising")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Needs first observation/ }));
-    expect(screen.getByText("Newcomer")).toBeInTheDocument();
-    expect(screen.queryByText("Rising")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Under review/ }));
-    expect(screen.getByText("Flagged")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /All tracked/ }));
-    expect(screen.getByText("Newcomer")).toBeInTheDocument();
+    const cohort = await cohortPanel();
+    fireEvent.click(cohort.getByRole("button", { name: /Growth-qualified/ }));
+    expect(cohort.queryByText("Newcomer")).not.toBeInTheDocument();
+    expect(cohort.getByText("Rising")).toBeInTheDocument();
+    fireEvent.click(cohort.getByRole("button", { name: /Needs first observation/ }));
+    expect(cohort.getByText("Newcomer")).toBeInTheDocument();
+    expect(cohort.queryByText("Rising")).not.toBeInTheDocument();
+    fireEvent.click(cohort.getByRole("button", { name: /Under review/ }));
+    expect(cohort.getByText("Flagged")).toBeInTheDocument();
+    fireEvent.click(cohort.getByRole("button", { name: /All tracked/ }));
+    expect(cohort.getByText("Newcomer")).toBeInTheDocument();
   });
 
   it("only excludes unknown metrics when a threshold is switched on", async () => {
     renderPage(pageComponent(DiscoverRoute));
-    await screen.findByText("Newcomer");
+    const cohort = await cohortPanel();
     expect(
-      screen.getByText(/Unknown momentum or growth never hides an artist/),
+      cohort.getByText(/Unknown momentum or growth never hides an artist/),
     ).toBeInTheDocument();
     // Switching the growth threshold on is the only way unmeasured artists disappear.
-    fireEvent.click(screen.getByLabelText("Apply 30-day growth threshold"));
-    expect(screen.queryByText("Newcomer")).not.toBeInTheDocument();
-    expect(screen.getByText("Rising")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
-    expect(await screen.findByText("Newcomer")).toBeInTheDocument();
+    fireEvent.click(cohort.getByLabelText("Apply 30-day growth threshold"));
+    expect(cohort.queryByText("Newcomer")).not.toBeInTheDocument();
+    expect(cohort.getByText("Rising")).toBeInTheDocument();
+    fireEvent.click(cohort.getByRole("button", { name: "Reset" }));
+    expect(cohort.getByText("Newcomer")).toBeInTheDocument();
   });
 });
 
@@ -178,5 +207,41 @@ describe("Radar page", () => {
     expect(
       screen.queryByRole("heading", { name: "Get started with your first artist" }),
     ).toBeNull();
+  });
+
+  it("links every unlisted workspace section from Home", async () => {
+    renderPage(pageComponent(RadarRoute));
+    expect(await screen.findByRole("link", { name: "A&R pipeline" })).toHaveAttribute(
+      "href",
+      "/pipeline",
+    );
+    expect(screen.getByRole("link", { name: "Audience" })).toHaveAttribute("href", "/audience");
+    expect(screen.getByRole("link", { name: "Development plans" })).toHaveAttribute(
+      "href",
+      "/development",
+    );
+    expect(screen.getByRole("link", { name: "Growth checks" })).toHaveAttribute(
+      "href",
+      "/integrity",
+    );
+    expect(screen.getByRole("link", { name: "Fan content" })).toHaveAttribute("href", "/ugc");
+  });
+});
+
+describe("Settings page", () => {
+  it("merges sources, alerts, reports, forecasts and backtesting into one page", async () => {
+    renderPage(pageComponent(SettingsRoute));
+    expect(
+      await screen.findByRole("heading", { name: "Workspace administration" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "ListenBrainz community pulse" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Import authorized metrics" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Alerts" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Evidence report" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Breakout prediction model" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Historical validation" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Data sources" })).toHaveAttribute("href", "#sources");
   });
 });

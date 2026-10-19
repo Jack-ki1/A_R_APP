@@ -3,7 +3,7 @@
 export const FIRST_RUN_STEPS: { title: string; detail: string }[] = [
   {
     title: "Find an artist",
-    detail: "Search the live MusicBrainz catalog from Discover or Data sources.",
+    detail: "Search the live MusicBrainz catalog from Discover or Settings.",
   },
   {
     title: "Verify identity",

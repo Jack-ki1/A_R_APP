@@ -20,7 +20,7 @@ Treat legacy `artists.scores`, `series`, `events`, and any demo records as non-a
 
 1. Sign in to the invite-only workspace.
 2. Search MusicBrainz, resolve an artist identity, and choose **Add to Radar**.
-3. Import authorized observations or audience cohorts using the Data Sources page. Each import needs an authorization reference; operator attestation is not a substitute for legal approval.
+3. Import authorized observations or audience cohorts from the data sources section of Settings. Each import needs an authorization reference; operator attestation is not a substitute for legal approval.
 4. Review comparable audience snapshots and source-linked observations on the artist profile.
 5. Record evidence-based integrity decisions and internal notes on each artist.
 6. Move artists through the pipeline with a rationale. Signing requires Head of A&R or Admin and the database policy configured in staging.
@@ -96,17 +96,17 @@ Supabase migrations, login/RLS role matrix, provider rights, hosted deployment, 
 
 ## Product map
 
-The application has five primary navigation sections.
+The application has three primary navigation sections.
 
 | Navigation section | Purpose | Routes included |
 | --- | --- | --- |
-| Home | Landing intelligence overview and current activity | `/radar` |
-| Find artists | MusicBrainz search, identity verification, and candidate intake | `/discover` |
-| Pipeline | Artist tracking workspace: pipeline board, roster, development plans, integrity checks | `/pipeline`, `/artists`, `/development`, `/integrity` |
-| Audience | Aggregate audience comparison and permitted fan-content status | `/audience`, `/ugc` |
-| Settings | Sources, reports, alerts, and forecast/backtest readiness | `/settings`, `/sources`, `/reports`, `/alerts`, `/predictions`, `/backtesting` |
+| Home | Landing intelligence overview and current activity, with links to every other workspace page | `/radar` |
+| Find artists | MusicBrainz search, identity verification, candidate intake, cohort filters, saved searches, and the monitored roster | `/discover` |
+| Settings | Workspace administration, data sources, alerts, reports, and forecast/backtest readiness | `/settings` |
 
-The sidebar shows only these five entries. Sub-pages are reached through links inside their parent page (Pipeline links to the roster, development plans, and growth checks; Audience links to fan content; Settings links to data sources, reports, alerts, and readiness pages) and remain listed in the mobile sections menu.
+The sidebar shows only these three entries. The other workspace routes stay in the source tree but are unlisted: `/pipeline`, `/development`, `/integrity`, `/audience`, and `/ugc` are reached through in-page links (Home lists all five, Pipeline links to development plans and growth checks, and Audience links to fan content).
+
+The former roster, data sources, alerts, reports, forecast, and backtest routes were removed; their content now lives on Find artists (roster) and Settings (the rest) as sections of a single page.
 
 There is no standalone Reviews route. The former review page was removed from the product navigation and source tree.
 
@@ -128,17 +128,17 @@ The Home route is not a substitute for the sourced observation table on an artis
 
 ### Artists
 
-The artist roster is the operational center of the product.
+The artist roster is the operational center of the product. It no longer has its own route; it renders as the "Monitored roster" panel on the Find artists page.
 
 It lists monitored canonical artists and omits demo rows from normal operational queries.
 
-The search field in the header sends users to this area, which is linked from the Pipeline page rather than shown as a separate sidebar entry.
+The header search sends users to `/discover`, where the roster panel carries a free-text filter over name, city, country, genre, language, and aliases, seeded from the `?q=` search parameter.
 
 Artist cards expose identity, location, stage, integrity state, and any available legacy display metrics.
 
 The artist profile is the place to inspect source-linked observations, compatible audience snapshots, notes, and workflow context.
 
-The related workspace pages — discovery, pipeline, development plans, and growth checks — are reached from the Find artists and Pipeline sidebar sections.
+The related workspace pages — pipeline, development plans, growth checks, audience, and fan content — are reached from links on Home and Pipeline rather than from the sidebar.
 
 ### Discovery
 
@@ -150,9 +150,11 @@ Cohort tabs are All tracked, Needs first observation, Growth-qualified, Under re
 
 Momentum and growth thresholds are opt-in checkboxes. Unknown momentum or growth never hides an artist unless the operator actively enables that numeric threshold, so a newly onboarded artist with no metrics still appears in All tracked. Missing values render as an em dash, never as 0%.
 
+Below the cohort view the same page renders the monitored roster: every artist as a card with stage, integrity, audience, and priority score, filterable by name, city, genre, and related identity fields.
+
 ### Pipeline
 
-The pipeline is a top-level navigation section and the home of the artist tracking workspace.
+The pipeline is the home of the artist tracking workspace. It is linked from Home rather than shown as a sidebar entry.
 
 It is a kanban-style operational view of pipeline stages.
 
@@ -206,15 +208,15 @@ The page reports Not connected instead of displaying synthetic UGC rankings as r
 
 Settings is the administration and supporting-tools hub.
 
-It links to data sources, reports and exports, alerts, forecast readiness, and backtest readiness.
+Data sources, reports and exports, alerts, forecast readiness, and backtest readiness are rendered directly on the Settings page as named sections, with an anchor jump list at the top. They no longer have their own routes.
 
 Forecasts and reports are not primary navigation sections.
 
-They are supporting workspace tools accessed from Settings.
+They are supporting workspace tools rendered inside Settings.
 
 ### Forecast readiness
 
-The forecast page hosts the breakout prediction model registry.
+The forecast readiness section of Settings hosts the breakout prediction model registry.
 
 It contains a logistic-regression baseline trained on synthetic data (scikit-learn, exported to JSON for Node.js inference). The model is explicitly labelled as unvalidated: its AUC reflects separation on synthetic labels, not real-world predictive power.
 
@@ -224,7 +226,7 @@ The model must be retrained on real labelled outcomes and pass governance review
 
 ### Backtest readiness
 
-The backtesting page documents the evidence required for historical validation.
+The backtest readiness section of Settings documents the evidence required for historical validation.
 
 The earlier synthetic forecast chart was removed because it did not validate scouting outcomes.
 
@@ -250,13 +252,13 @@ No real rule-driven alert engine is available until source ingestion and alert r
 
 ### Data sources
 
-Data Sources is accessed from Settings.
+The data sources section is part of Settings.
 
 It owns MusicBrainz identity lookup, candidate intake, source registry visibility, manual metric import, manual cohort import, and audience review cadence preference.
 
 It also provides per-user provider connections: pick a provider (YouTube, Spotify, TikTok), paste your API key, and it is encrypted with AES-256-GCM in the server before it reaches the database, stored scoped to your account. The key never appears in the browser or in any query response — the server decrypts it only to call the provider API on your behalf. Encryption requires the `PROVIDER_ENCRYPTION_KEY` server environment variable.
 
-YouTube Data API is fully wired: connect your key, test the connection, and search for videos live from the Data Sources page. Spotify and TikTok connections are stored but live calls require an OAuth and rights review before enabling.
+YouTube Data API is fully wired: connect your key, test the connection, and search for videos live from the data sources section of Settings. Spotify and TikTok connections are stored but live calls require an OAuth and rights review before enabling.
 
 Changing the cadence does not start a scheduler.
 
@@ -408,6 +410,12 @@ These include panels, badges, portraits, score rings, integrity chips, and KPI c
 
 `theme-toggle.tsx` switches the visual color theme and persists the preference in browser storage.
 
+`roster-panel.tsx` renders the monitored-artist roster card grid shown on Find artists, seeded from the `?q=` search parameter.
+
+`settings/` holds the section components composed by the Settings page: `sources-section.tsx`, `alerts-section.tsx`, `reports-section.tsx`, `predictions-section.tsx`, and `backtesting-section.tsx`.
+
+`first-run.tsx` renders the empty-workspace on-ramp and needs-evidence cards used by Home.
+
 ### `src/components/ui`
 
 The `ui` directory contains only UI primitives currently imported by the app.
@@ -478,6 +486,8 @@ Operational artist queries exclude rows marked as demo.
 
 `musicbrainz.functions.ts` contains server-side MusicBrainz lookup helpers and rate-limit behavior.
 
+`reports.ts` defines the accepted-observation query that feeds the evidence report on Settings.
+
 `source.functions.ts` contains authenticated server functions for identity intake and CSV import RPC calls.
 
 `utils.ts` contains shared class-name and formatting utilities.
@@ -500,21 +510,17 @@ The source tree has no `review.tsx` route.
 
 | File | URL | Responsibility |
 | --- | --- | --- |
-| `radar.tsx` | `/radar` | Home dashboard and recent pipeline activity. |
-| `artists.index.tsx` | `/artists` | Artist list and filtered search results. |
+| `radar.tsx` | `/radar` | Home dashboard, recent pipeline activity, and links to the unlisted workspace pages. |
 | `artists.$id.tsx` | `/artists/:id` | Canonical artist profile, observations, cohorts, events, and notes. |
-| `discover.tsx` | `/discover` | Existing artist discovery filters and saved searches. |
-| `pipeline.tsx` | `/pipeline` | Artist pipeline board; top-level Pipeline section. |
+| `discover.tsx` | `/discover` | MusicBrainz intake, cohort filters, saved searches, and the monitored roster. |
+| `pipeline.tsx` | `/pipeline` | Artist pipeline board; linked from Home. |
 | `development.tsx` | `/development` | Artist development task plans; linked from Pipeline. |
 | `integrity.tsx` | `/integrity` | Growth integrity cases; linked from Pipeline. |
 | `audience.tsx` | `/audience` | Aggregate audience snapshot overview. |
 | `ugc.tsx` | `/ugc` | Explicit not-connected UGC state. |
-| `settings.tsx` | `/settings` | Administration and hub for supporting tools. |
-| `sources.tsx` | `/sources` | Source registry, MusicBrainz intake, and approved CSV imports. |
-| `reports.tsx` | `/reports` | Source-linked report and export tool. |
-| `alerts.tsx` | `/alerts` | Operational alerts list. |
-| `predictions.tsx` | `/predictions` | Model and forecast readiness disclosure. |
-| `backtesting.tsx` | `/backtesting` | Historical validation readiness disclosure. |
+| `settings.tsx` | `/settings` | Administration plus the data sources, alerts, reports, forecast, and backtest sections. |
+
+There is no `artists.index.tsx`, `sources.tsx`, `alerts.tsx`, `reports.tsx`, `predictions.tsx`, or `backtesting.tsx`: that content moved into `discover.tsx`, `settings.tsx`, and their section components under `src/components/settings/`.
 
 `routeTree.gen.ts` is generated from route files by the TanStack tooling.
 
@@ -546,7 +552,7 @@ Running the application build after a route-file change regenerates it.
 
 `test/first-run.test.tsx` covers the onboarding step model and renders the first-run checklist through a router.
 
-`test/dashboard-pages.test.tsx` renders the Discover and Home routes against a mocked Supabase client to verify the empty-state on-ramp, KPI honesty, tab switching, and the awaiting-verification queue.
+`test/dashboard-pages.test.tsx` renders the Discover, Home, and Settings routes against a mocked Supabase client to verify the empty-state on-ramp, KPI honesty, tab switching, the awaiting-verification queue, the merged roster on Discover, and the consolidated Settings sections.
 
 `test/fixtures.ts` provides complete artist row fixtures used by those suites.
 

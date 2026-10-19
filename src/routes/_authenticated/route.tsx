@@ -6,7 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { Compass, Gauge, Search, Kanban, PieChart, Settings, LogOut } from "lucide-react";
+import { Compass, Gauge, Search, Settings, LogOut } from "lucide-react";
 import { Logo } from "@/components/br-ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -34,36 +34,14 @@ export const Route = createFileRoute("/_authenticated")({
 
 const NAV = [
   { to: "/radar", label: "Home", icon: Gauge },
-  { to: "/discover", label: "Find artists", icon: Search },
-  {
-    to: "/pipeline",
-    label: "Pipeline",
-    icon: Kanban,
-    match: ["/artists", "/development", "/integrity"],
-  },
-  { to: "/audience", label: "Audience", icon: PieChart, match: ["/ugc"] },
+  { to: "/discover", label: "Find artists", icon: Search, match: ["/artists"] },
   { to: "/settings", label: "Settings", icon: Settings },
-] as const;
-
-const SUB_PAGES = [
-  { to: "/artists", label: "Artist roster" },
-  { to: "/development", label: "Development plans" },
-  { to: "/integrity", label: "Growth checks" },
-  { to: "/ugc", label: "Fan content" },
-  { to: "/sources", label: "Data sources" },
-  { to: "/reports", label: "Reports & exports" },
-  { to: "/alerts", label: "Alerts" },
-  { to: "/predictions", label: "Forecast readiness" },
-  { to: "/backtesting", label: "Backtest readiness" },
 ] as const;
 
 function Shell() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const destinations = [
-    ...NAV.map((group) => ({ to: group.to, label: group.label })),
-    ...SUB_PAGES,
-  ];
+  const destinations = NAV.map((group) => ({ to: group.to, label: group.label }));
 
   return (
     <div className="flex min-h-screen">
@@ -102,7 +80,7 @@ function Shell() {
             onSubmit={(e) => {
               e.preventDefault();
               const q = new FormData(e.currentTarget).get("q") as string;
-              navigate({ to: "/artists", search: { q } });
+              navigate({ to: "/discover", search: { q } });
             }}
           >
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

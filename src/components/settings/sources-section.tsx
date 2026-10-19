@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { ExternalLink, Search, Plug, Unplug, Loader2 } from "lucide-react";
@@ -27,6 +26,8 @@ import {
   parseMetricCsv,
 } from "@/lib/metric-import";
 
+export type Pulse = Awaited<ReturnType<typeof getListenBrainzPulse>> | null;
+
 const PROVIDER_INFO: Record<string, { label: string; getKeyUrl: string; getKeyLabel: string }> = {
   youtube: {
     label: "YouTube Data API",
@@ -45,25 +46,7 @@ const PROVIDER_INFO: Record<string, { label: string; getKeyUrl: string; getKeyLa
   },
 };
 
-export const Route = createFileRoute("/_authenticated/sources")({
-  head: () => ({
-    meta: [
-      { title: "Data Sources — Breakout Radar" },
-      { name: "description", content: "Live metadata discovery and connected data coverage." },
-    ],
-  }),
-  loader: async () => {
-    try {
-      return { pulse: await getListenBrainzPulse(), pulseError: "" };
-    } catch {
-      return { pulse: null, pulseError: "ListenBrainz community data is temporarily unavailable." };
-    }
-  },
-  component: Sources,
-});
-
-function Sources() {
-  const { pulse, pulseError } = Route.useLoaderData();
+export function SourcesSection({ pulse, pulseError }: { pulse: Pulse; pulseError: string }) {
   const queryClient = useQueryClient();
   const sourceRegistryQuery = useQuery(dataSourcesQuery);
   const sources = sourceRegistryQuery.data ?? [];

@@ -69,12 +69,12 @@ export function FirstRunChecklist() {
       </ol>
       <div className="mt-5 flex flex-wrap gap-3">
         <Button asChild>
-          <Link to="/discover">
+          <Link to="/discover" search={{ q: undefined }}>
             <Search /> Find an artist
           </Link>
         </Button>
         <Button asChild variant="outline">
-          <Link to="/sources">
+          <Link to="/settings">
             <Upload /> Attach authorized data
           </Link>
         </Button>
@@ -104,12 +104,12 @@ export function NeedsEvidenceCard({
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button asChild size="sm">
-          <Link to="/sources">
+          <Link to="/settings">
             <Upload /> Attach authorized data
           </Link>
         </Button>
         <Button asChild size="sm" variant="outline">
-          <Link to="/discover">
+          <Link to="/discover" search={{ q: undefined }}>
             <Search /> Find more artists
           </Link>
         </Button>

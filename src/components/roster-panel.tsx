@@ -1,28 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { artistsQuery, fmt, stageLabel } from "@/lib/artists";
 import { Panel, Portrait, DemoBadge, IntegrityChip, ScoreRing } from "@/components/br-ui";
 import { Input } from "@/components/ui/input";
 
-export const Route = createFileRoute("/_authenticated/artists/")({
-  head: () => ({
-    meta: [
-      { title: "Artists — Breakout Radar" },
-      { name: "description", content: "All monitored artists." },
-    ],
-  }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    q: typeof s["q"] === "string" ? s["q"] : undefined,
-  }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(artistsQuery),
-  component: ArtistsPage,
-});
-
-function ArtistsPage() {
-  const { q: initial } = Route.useSearch();
+/**
+ * Monitored-artist roster — the content of the former /artists route, merged into Discover.
+ * `initialQuery` seeds the filter from the discover search param (?q=).
+ */
+export function RosterPanel({ initialQuery }: { initialQuery: string }) {
   const { data } = useSuspenseQuery(artistsQuery);
-  const [q, setQ] = useState(initial ?? "");
+  const [q, setQ] = useState(initialQuery);
+  useEffect(() => setQ(initialQuery), [initialQuery]);
   const rows = useMemo(() => {
     const t = q.toLowerCase().trim();
     return data.filter(
@@ -37,7 +27,7 @@ function ArtistsPage() {
 
   return (
     <Panel
-      title="Artists"
+      title="Monitored roster"
       sub={`${rows.length} of ${data.length} monitored`}
       action={
         <Input

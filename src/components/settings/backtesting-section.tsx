@@ -1,17 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Panel } from "@/components/br-ui";
 
-export const Route = createFileRoute("/_authenticated/backtesting")({
-  head: () => ({
-    meta: [
-      { title: "Backtesting — Breakout Radar" },
-      { name: "description", content: "Historical model validation readiness." },
-    ],
-  }),
-  component: Backtesting,
-});
-
-function Backtesting() {
+export function BacktestingSection() {
   return (
     <div className="space-y-4">
       <Panel title="Historical validation" sub="No validated backtest is available.">

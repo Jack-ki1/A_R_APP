@@ -77,7 +77,7 @@ function PipelinePage() {
           — only Head of A&R or Admin can mark Signed.
         </p>
         <nav className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Artist workspace">
-          <Link to="/artists" search={{ q: undefined }} className="text-primary hover:underline">
+          <Link to="/discover" search={{ q: undefined }} className="text-primary hover:underline">
             Artist roster
           </Link>
           <Link to="/development" className="text-primary hover:underline">

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/discover";
 import { Panel, Portrait, DemoBadge, ScoreRing, IntegrityChip } from "@/components/br-ui";
 import { ArtistIntakeSearch } from "@/components/artist-intake";
+import { RosterPanel } from "@/components/roster-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -24,8 +25,11 @@ export const Route = createFileRoute("/_authenticated/discover")({
   head: () => ({
     meta: [
       { title: "Discover — Breakout Radar" },
-      { name: "description", content: "Find artists, filter the cohort and save searches." },
+      { name: "description", content: "Find artists, filter the cohort, and browse the roster." },
     ],
+  }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    q: typeof s["q"] === "string" ? s["q"] : undefined,
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -38,6 +42,11 @@ export const Route = createFileRoute("/_authenticated/discover")({
 const sel = "h-9 rounded-lg border bg-panel px-2 text-sm";
 
 function Discover() {
+  // Raw location search keeps this component mountable outside its own route (tests).
+  const rosterQuery = useRouterState({
+    select: (s) =>
+      typeof s.location.search["q"] === "string" ? s.location.search["q"] : undefined,
+  });
   const { data } = useSuspenseQuery(artistsQuery);
   const { data: saved } = useSuspenseQuery(tableQuery("saved_searches"));
   const evidence = useQuery(evidenceSummaryQuery);
@@ -307,6 +316,8 @@ function Discover() {
           </ul>
         </Panel>
       </div>
+
+      <RosterPanel initialQuery={rosterQuery ?? ""} />
     </div>
   );
 }

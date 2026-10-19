@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
@@ -6,17 +5,7 @@ import { Panel } from "@/components/br-ui";
 import { getModelMetadata, predictAllArtists } from "@/lib/ml.functions";
 import { myRolesQuery } from "@/lib/artists";
 
-export const Route = createFileRoute("/_authenticated/predictions")({
-  head: () => ({
-    meta: [
-      { title: "Model registry — Breakout Radar" },
-      { name: "description", content: "Breakout prediction model registry and run history." },
-    ],
-  }),
-  component: Predictions,
-});
-
-function Predictions() {
+export function PredictionsSection() {
   const queryClient = useQueryClient();
   const modelQuery = useQuery({
     queryKey: ["ml-model"],

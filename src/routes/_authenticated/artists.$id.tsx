@@ -79,7 +79,7 @@ function ArtistPage() {
   return (
     <div className="space-y-6">
       <Link
-        to="/artists"
+        to="/discover"
         search={{ q: undefined }}
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
       >

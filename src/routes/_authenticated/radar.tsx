@@ -157,7 +157,7 @@ function RadarPage() {
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Button asChild>
-              <Link to="/discover">
+              <Link to="/discover" search={{ q: undefined }}>
                 <Search /> Find an artist
               </Link>
             </Button>
@@ -573,6 +573,29 @@ function RadarPage() {
           </Panel>
         </div>
       </div>
+
+      <Panel
+        title="Workspace sections"
+        sub="Detailed views that are not part of the three main sections — each also links onward to the others."
+      >
+        <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm" aria-label="Workspace sections">
+          <Link to="/pipeline" className="text-primary hover:underline">
+            A&R pipeline
+          </Link>
+          <Link to="/audience" className="text-primary hover:underline">
+            Audience
+          </Link>
+          <Link to="/development" className="text-primary hover:underline">
+            Development plans
+          </Link>
+          <Link to="/integrity" className="text-primary hover:underline">
+            Growth checks
+          </Link>
+          <Link to="/ugc" className="text-primary hover:underline">
+            Fan content
+          </Link>
+        </nav>
+      </Panel>
     </div>
   );
 }

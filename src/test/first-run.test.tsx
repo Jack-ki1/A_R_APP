@@ -49,9 +49,9 @@ describe("FirstRunChecklist", () => {
       path: "/discover",
       component: () => null,
     });
-    const sourcesRoute = createRoute({
+    const settingsRoute = createRoute({
       getParentRoute: () => rootRoute,
-      path: "/sources",
+      path: "/settings",
       component: () => null,
     });
     const homeRoute = createRoute({
@@ -60,7 +60,7 @@ describe("FirstRunChecklist", () => {
       component: () => <FirstRunChecklist />,
     });
     const router = createRouter({
-      routeTree: rootRoute.addChildren([homeRoute, discoverRoute, sourcesRoute]),
+      routeTree: rootRoute.addChildren([homeRoute, discoverRoute, settingsRoute]),
       history: createMemoryHistory({ initialEntries: ["/"] }),
     });
     render(<RouterProvider router={router} />);
@@ -74,7 +74,7 @@ describe("FirstRunChecklist", () => {
     );
     expect(await screen.findByRole("link", { name: /Attach authorized data/i })).toHaveAttribute(
       "href",
-      "/sources",
+      "/settings",
     );
     expect(screen.getByLabelText("Setup progress")).toBeInTheDocument();
     expect(screen.getByText(/nothing to rank/i)).toBeInTheDocument();

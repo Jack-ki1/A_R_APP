@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { tableQuery } from "@/lib/modules";
@@ -6,18 +6,7 @@ import { Panel, DemoBadge } from "@/components/br-ui";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/alerts")({
-  head: () => ({
-    meta: [
-      { title: "Alerts — Breakout Radar" },
-      { name: "description", content: "Momentum and integrity alerts." },
-    ],
-  }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(tableQuery("alerts")),
-  component: Alerts,
-});
-
-function Alerts() {
+export function AlertsSection() {
   const { data } = useSuspenseQuery(tableQuery("alerts"));
   const operationalAlerts = data.filter((alert) => !alert.is_demo);
   const qc = useQueryClient();

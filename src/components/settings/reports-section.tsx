@@ -1,40 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { artistsQuery, STAGES } from "@/lib/artists";
+import { observationsQuery } from "@/lib/reports";
 import { Panel } from "@/components/br-ui";
 import { Button } from "@/components/ui/button";
 
-const observationsQuery = queryOptions({
-  queryKey: ["report_metric_observations"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("metric_observations")
-      .select("*")
-      .eq("quality_status", "accepted")
-      .order("observed_at", { ascending: false });
-    if (error) throw error;
-    return data;
-  },
-});
-
-export const Route = createFileRoute("/_authenticated/reports")({
-  head: () => ({
-    meta: [
-      { title: "Reports — Breakout Radar" },
-      { name: "description", content: "Source-linked private A&R evidence report." },
-    ],
-  }),
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(artistsQuery),
-      context.queryClient.ensureQueryData(observationsQuery),
-    ]),
-  component: Reports,
-});
-
-function Reports() {
+export function ReportsSection() {
   const { data: artists } = useSuspenseQuery(artistsQuery);
   const { data: observations } = useSuspenseQuery(observationsQuery);
   const byId = new Map(artists.map((artist) => [artist.id, artist]));
