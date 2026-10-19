@@ -7,7 +7,7 @@
 | Date / time | 19 October 2026, 10:15–13:35 UTC |
 | Branch | `fix/evidence-driven-pilot` (created from `main`) |
 | Base commit | `c4382fd` ("add_2") |
-| Commits | `2ea972f` (Delivery A), `6bd080c` (follow-up: authoritative import counts, artistsQuery error state) |
+| Commits | `2ea972f` (Delivery A), `6bd080c` (follow-up: authoritative import counts, artistsQuery error state), later work through `0e90d06` (see "Subsequent deliveries") |
 | Environment inspected | WSL2 Linux, Node v24.21.0, npm 11.19.0 |
 | Stack | React 19, TanStack Start/Router, Vite 8, Nitro, Tailwind v4, Supabase Auth/Postgres, Vitest |
 | Migrations changed | **none** (no SQL written, no schema applied) |
@@ -111,6 +111,23 @@ Still unknown / not proven here:
 4. After an authorized import (not run here — blocked), `evidenceSummaryQuery` would report the
    accepted row count, distinct artists and latest window end; a failure renders an error banner,
    not a zero.
+
+## Subsequent deliveries (recorded after Delivery A)
+
+| Commit | What shipped |
+| --- | --- |
+| `06a9764` | docs: record the Delivery A follow-up fixes in this file |
+| `41d78c8` | per-user provider connections (migration `0006`) and the breakout prediction model (`ml/train.py`, `ml/model.json`, `src/lib/ml*`, migration `0007`) |
+| `e76641f` | the `vault` extension is unavailable in the owner's Postgres → migration `0006` rewritten and encryption moved to Node.js AES-256-GCM (`src/lib/crypto.ts`, env `PROVIDER_ENCRYPTION_KEY`) |
+| `988644c` | sidebar reduced from 14 entries to 5 sections |
+| `0e90d06` | sidebar reduced to 3 sections (Home, Find artists, Settings); the roster merged into `/discover` (`src/components/roster-panel.tsx`, `?q=` filter); data sources, alerts, reports, forecasts and backtests merged into `/settings` as anchored sections (`src/components/settings/*`) with their route files deleted; `/pipeline`, `/development`, `/integrity`, `/audience`, `/ugc` unlinked from the nav but kept and linked from Home |
+
+Gates at `0e90d06`: `npm run typecheck` clean; `npm test` 35/35 across 6 files; `npm run build`
+regenerates the route tree and succeeds; full `npm run lint` reports 34 problems (baseline 47, all
+pre-existing elsewhere — deleting the six route files removed their debt); touched files are
+prettier-clean. The built server boots and serves (root returns HTTP 307 to the auth/landing
+redirect). Browser E2E and live Supabase flows remain blocked exactly as listed below; migrations
+`0004`–`0007` are still unapplied.
 
 ## BLOCKED — owner inputs required
 
