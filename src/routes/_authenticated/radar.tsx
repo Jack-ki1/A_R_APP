@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
   Activity,
@@ -87,7 +87,9 @@ function exportCsv(rows: Artist[]) {
 }
 
 function RadarPage() {
-  const { data: artists } = useSuspenseQuery(artistsQuery);
+  const artistsResult = useQuery(artistsQuery);
+  const artists = useMemo(() => artistsResult.data ?? [], [artistsResult.data]);
+  const artistsError = artistsResult.isError;
   const auditQueryResult = useQuery(auditQuery);
   const audit = auditQueryResult.data;
   const auditError = auditQueryResult.isError;
@@ -256,7 +258,16 @@ function RadarPage() {
             )
           }
         >
-          {artists.length === 0 ? (
+          {artistsError ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive"
+            >
+              Could not load the artists table. This is an error state, not an empty workspace —
+              verify Supabase connectivity and role grants.{" "}
+              {artistsResult.error instanceof Error ? artistsResult.error.message : ""}
+            </p>
+          ) : artists.length === 0 ? (
             <FirstRunChecklist />
           ) : (
             <div className="overflow-x-auto">

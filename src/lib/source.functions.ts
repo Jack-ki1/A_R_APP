@@ -103,7 +103,16 @@ export const importAuthorizedMetricRows = createServerFn({ method: "POST" })
       p_rows: data.rows,
     });
     if (error || !runId) throw new Error(error?.message ?? "Metric import failed.");
-    return { runId, accepted: data.rows.length };
+    // The RPC inserts with `on conflict do nothing`, so the true accepted count is the number
+    // of rows actually written for this run — not the submitted count.
+    const { count: acceptedCount, error: countError } = await context.supabase
+      .from("metric_observations")
+      .select("id", { count: "exact", head: true })
+      .eq("ingestion_run_id", runId);
+    if (countError)
+      throw new Error(countError.message ?? "Import succeeded but the accepted count failed.");
+    const accepted = acceptedCount ?? 0;
+    return { runId, accepted, submitted: data.rows.length };
   });
 
 export const importAuthorizedAudienceSnapshots = createServerFn({ method: "POST" })

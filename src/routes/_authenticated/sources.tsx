@@ -80,7 +80,10 @@ function Sources() {
       });
       await queryClient.invalidateQueries({ queryKey: ["metric_observations"] });
       await queryClient.invalidateQueries({ queryKey: ["data_sources"] });
-      setImportMessage(`Import recorded: ${result.accepted} observations. Run ${result.runId}.`);
+      const skipped = result.submitted - result.accepted;
+      setImportMessage(
+        `Import recorded: ${result.accepted} new observations ( ${result.submitted} submitted${skipped > 0 ? `, ${skipped} duplicate or invalid rows skipped` : ""}). Run ${result.runId}.`,
+      );
       setCsvFile(null);
     } catch (cause) {
       setImportMessage(cause instanceof Error ? cause.message : "Metric import failed.");
