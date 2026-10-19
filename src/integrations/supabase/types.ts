@@ -746,6 +746,75 @@ export type Database = {
         };
         Relationships: [];
       };
+      provider_connections: {
+        Row: {
+          id: string;
+          user_id: string;
+          provider: string;
+          vault_secret_id: string;
+          key_hint: string;
+          status: string;
+          last_tested_at: string | null;
+          last_error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          provider: string;
+          vault_secret_id: string;
+          key_hint: string;
+          status?: string;
+          last_tested_at?: string | null;
+          last_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          provider?: string;
+          vault_secret_id?: string;
+          key_hint?: string;
+          status?: string;
+          last_tested_at?: string | null;
+          last_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      ml_predictions: {
+        Row: {
+          id: string;
+          artist_id: string;
+          model_version: string;
+          prediction_score: number;
+          confidence: string;
+          features_used: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          artist_id: string;
+          model_version: string;
+          prediction_score: number;
+          confidence: string;
+          features_used?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          artist_id?: string;
+          model_version?: string;
+          prediction_score?: number;
+          confidence?: string;
+          features_used?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
           id: string;
@@ -826,6 +895,32 @@ export type Database = {
           p_evidence_refs?: Json;
         };
         Returns: undefined;
+      };
+      connect_provider: {
+        Args: { p_provider: string; p_api_key: string };
+        Returns: string;
+      };
+      get_provider_api_key: {
+        Args: { p_provider: string };
+        Returns: string;
+      };
+      disconnect_provider: {
+        Args: { p_provider: string };
+        Returns: undefined;
+      };
+      update_provider_connection_status: {
+        Args: { p_provider: string; p_status: string; p_error?: string };
+        Returns: undefined;
+      };
+      upsert_ml_prediction: {
+        Args: {
+          p_artist_id: string;
+          p_model_version: string;
+          p_prediction_score: number;
+          p_confidence: string;
+          p_features_used: Json;
+        };
+        Returns: string;
       };
     };
     Enums: {

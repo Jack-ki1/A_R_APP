@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "trained_at": "2026-10-19T11:58:03.688264+00:00",
+  "features": [
+    "growth_ratio",
+    "audience_log",
+    "engagement_ratio",
+    "save_share",
+    "integrity_encoded",
+    "evidence_coverage",
+    "has_observations",
+    "has_snapshots",
+    "momentum_score"
+  ],
+  "means": [
+    1.595071,
+    9.987532,
+    0.616462,
+    0.201459,
+    0.730156,
+    0.605871,
+    0.510312,
+    0.400938,
+    50.441907
+  ],
+  "stds": [
+    1.099028,
+    2.504705,
+    0.508385,
+    0.122757,
+    0.373639,
+    0.19728,
+    0.499894,
+    0.490088,
+    19.966629
+  ],
+  "coefficients": [
+    0.773328,
+    0.053594,
+    0.171021,
+    -0.000582,
+    0.271495,
+    0.079397,
+    0.122,
+    -0.028271,
+    0.07126
+  ],
+  "intercept": 0.315648,
+  "auc_on_synthetic": 0.7041,
+  "training_data": "synthetic_baseline_v1",
+  "n_samples": 4000,
+  "disclaimer": "UNVALIDATED MODEL \u2014 trained on synthetic data with a known signal pattern. AUC reflects separation on synthetic labels, not real-world predictive power. Replace with a real labelled dataset and complete governance review before any operational use. No source in this repository is approved for model training."
+}

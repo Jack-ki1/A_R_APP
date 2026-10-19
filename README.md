@@ -212,11 +212,13 @@ They are supporting workspace tools accessed from Settings.
 
 ### Forecast readiness
 
-The forecast page documents model readiness.
+The forecast page hosts the breakout prediction model registry.
 
-It intentionally does not produce a probability or a breakout prediction.
+It contains a logistic-regression baseline trained on synthetic data (scikit-learn, exported to JSON for Node.js inference). The model is explicitly labelled as unvalidated: its AUC reflects separation on synthetic labels, not real-world predictive power.
 
-The repository does not contain a trained artifact, approved feature dataset, target labels, or a held-out evaluation report.
+A "Generate predictions for all artists" action (Analyst/Head of A&R/Admin only) computes a score for every artist and stores results in the `ml_predictions` table. Scores appear on the artist page.
+
+The model must be retrained on real labelled outcomes and pass governance review before any operational use. No source in this repository is approved for model training.
 
 ### Backtest readiness
 
@@ -250,6 +252,10 @@ Data Sources is accessed from Settings.
 
 It owns MusicBrainz identity lookup, candidate intake, source registry visibility, manual metric import, manual cohort import, and audience review cadence preference.
 
+It also provides per-user provider connections: pick a provider (YouTube, Spotify, TikTok), paste your API key, and it is encrypted with Supabase Vault and stored scoped to your account. The key never appears in the browser or in any query response — the server decrypts it only to call the provider API on your behalf.
+
+YouTube Data API is fully wired: connect your key, test the connection, and search for videos live from the Data Sources page. Spotify and TikTok connections are stored but live calls require an OAuth and rights review before enabling.
+
 Changing the cadence does not start a scheduler.
 
 ## Repository layout
@@ -270,8 +276,14 @@ A_R_APP_v1/
 │   │   ├── 0003_secure_workspace.sql
 │   │   ├── 0004_evidence_foundation.sql
 │   │   ├── 0005_auditable_ar_workflows.sql
+│   │   ├── 0006_provider_connections.sql
+│   │   ├── 0007_ml_predictions.sql
 │   │   └── meta/
 │   └── schema.ts
+├── ml/
+│   ├── model.json
+│   ├── requirements.txt
+│   └── train.py
 ├── src/
 │   ├── assets/
 │   ├── components/
@@ -790,7 +802,7 @@ Test malformed CSV rows, duplicate identity intake, mismatched cohort schemes, l
 
 The repository does not currently connect to a licensed commercial music intelligence provider.
 
-The repository does not currently ingest TikTok, Instagram, Spotify, or YouTube analytics.
+YouTube Data API is connected per-user via API key. Spotify and TikTok connections are stored but live calls require an OAuth and rights review. Instagram is not connected.
 
 The repository does not currently schedule daily or real-time imports.
 
@@ -798,9 +810,7 @@ The repository does not currently provide production storage for private demo re
 
 The repository does not currently offer an admin UI for inviting users or changing roles.
 
-The repository does not currently contain a training dataset or outcome registry for machine learning.
-
-The repository does not currently compute a validated probability of artist breakout.
+The breakout prediction model is trained on synthetic data and is not validated against real outcomes. It must not be used for operational decisions until retrained on labelled data and approved through governance review.
 
 The repository does not currently run an evidence-backed historical backtest.
 
