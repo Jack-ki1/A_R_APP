@@ -4,9 +4,10 @@
 
 | Field | Value |
 | --- | --- |
-| Date / time | 19 October 2026, 10:15 UTC |
+| Date / time | 19 October 2026, 10:15–13:35 UTC |
 | Branch | `fix/evidence-driven-pilot` (created from `main`) |
 | Base commit | `c4382fd` ("add_2") |
+| Commits | `2ea972f` (Delivery A), `6bd080c` (follow-up: authoritative import counts, artistsQuery error state) |
 | Environment inspected | WSL2 Linux, Node v24.21.0, npm 11.19.0 |
 | Stack | React 19, TanStack Start/Router, Vite 8, Nitro, Tailwind v4, Supabase Auth/Postgres, Vitest |
 | Migrations changed | **none** (no SQL written, no schema applied) |
@@ -50,8 +51,9 @@ on-ramp, evidence-based dashboard honesty, table/responsive fixes, and documenta
 | `src/components/first-run.tsx` | **new** — `FirstRunChecklist` (six steps + 3-step progress) and `NeedsEvidenceCard` |
 | `src/components/br-ui.tsx` | **new** `StatusBadge` (live/imported/partial/off/unvalidated); `DEMO` badge left reserved for real fixtures |
 | `src/routes/_authenticated/discover.tsx` | tabs with counts, opt-in threshold checkboxes, intake panel, honest empty states, `aria-label`s, "—" for unknown momentum |
-| `src/routes/_authenticated/radar.tsx` | first-run/needs-evidence cards, evidence-driven KPI order and gating, source-health panel with error state, "Awaiting integrity verification" queue, hero `DEMO` removal and "Find an artist" CTA, table `min-w`, `scope="col"`, per-cell padding, priority "—" for unscored, clean-cohort explanation, audit-error state |
-| `src/routes/_authenticated/sources.tsx` | uses shared `ArtistIntakeSearch` (net −143 lines, behavior preserved) |
+| `src/routes/_authenticated/radar.tsx` | first-run/needs-evidence cards, evidence-driven KPI order and gating, source-health panel with error state, "Awaiting integrity verification" queue, hero `DEMO` removal and "Find an artist" CTA, table `min-w`, `scope="col"`, per-cell padding, priority "—" for unscored, clean-cohort explanation, audit-error state, artistsQuery error state |
+| `src/routes/_authenticated/sources.tsx` | uses shared `ArtistIntakeSearch` (net −143 lines, behavior preserved); import success message now reports accepted vs submitted and flags skipped rows |
+| `src/lib/source.functions.ts` | `importAuthorizedMetricRows` now counts actual inserted rows after the RPC (which uses `on conflict do nothing`) instead of echoing the submitted count |
 | `src/test/fixtures.ts` | **new** — complete artist row fixtures |
 | `src/test/discover.test.ts` | **new** — 9 filter/tab/threshold tests |
 | `src/test/first-run.test.tsx` | **new** — 3 tests (step model + rendered checklist) |
@@ -72,6 +74,11 @@ Reproduced with running code:
 5. MusicBrainz intake only reachable through Settings → added to "Find artists".
 6. Direct database inspection via `DATABASE_URL` fails with `ENETUNREACH` (IPv6 literal, no v6
    route from this host) → schema checks were done read-only over the REST API instead.
+7. `import_authorized_metric_rows` returned the submitted row count as "accepted" even though the
+   RPC inserts with `on conflict do nothing` → fixed in the server function by counting actual
+   inserted rows after the RPC call.
+8. Home rendered the first-run checklist when `artistsQuery` failed (indistinguishable from an
+   empty workspace) → fixed by switching to `useQuery` with an explicit error panel.
 
 Still unknown / not proven here:
 
@@ -140,9 +147,5 @@ log or commit.
 2. Delivery B: read-only derived layer over `metric_observations` (observed growth, freshness,
    coverage) feeding Home/Discover instead of legacy `artists.growth_30d`, plus import dry-run
    preview and authoritative accepted/rejected counts from the RPC.
-3. Fix `import_authorized_metric_rows` reporting: `records_accepted` counts submitted rows, not
-   inserted rows (`on conflict do nothing`), so the UI can overstate acceptance.
-4. Add an error boundary/state for `artistsQuery` failures (currently only evidence/audit queries
-   distinguish error from empty).
-5. Browser smoke suite once Playwright can run: empty first-run, intake, threshold tabs,
+3. Browser smoke suite once Playwright can run: empty first-run, intake, threshold tabs,
    light/dark, mobile table scroll.
