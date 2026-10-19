@@ -28,3 +28,11 @@ This is a source-code audit and implementation checkpoint. Phase 1/2 files now i
 - Scoped ESLint on modified TypeScript files: passed. Full `npm run lint` fails on broad formatting drift; baseline was 656 Prettier errors plus 7 warnings, final run was 667 errors plus 7 warnings (including new formatting diagnostics in changed files before scoped formatting). No repository-wide reformat was applied.
 - `npm test`: passed, 2 files / 8 tests. `npm run build`: passed; Vite 8 client and Nitro Node server artifacts generated. See `RELEASE_CHECKLIST.md`.
 - Supabase RLS, login, provider API, staging migration, browser E2E, deployed runtime, and production migration state: **not run / not verified**.
+
+## Phase 3–5 implementation update
+
+Migration `0005_auditable_ar_workflows.sql` and the corresponding route changes now put review saves, integrity resolution, and pipeline stage changes behind role-checked atomic RPCs. Reviewer identity comes from `auth.uid()`, signing requires two distinct reviewers and senior authorization, integrity decisions record a reason and evidence references, and stage changes record rationale/history. The signup trigger no longer grants the first public user admin; the first admin needs an operator-controlled bootstrap. These changes are authored only; validate them against the actual staging Auth schema and RLS behavior before applying.
+
+The reports page now exports accepted observation rows with source IDs, windows, observed dates, rights status, and formula-injection protection. Demo alerts/cases are excluded from operational lists. Prediction and backtesting pages no longer display synthetic ranking/forecast evaluation. This accurately reports that there is no validated model or historical backtest; no training pipeline or model registry has been created because licensed feature history and outcome labels are unavailable.
+
+Added `.github/workflows/ci.yml` for `npm ci`, typecheck, unit tests, and build, plus `docs/PILOT_RUNBOOK.md`. Current local checks after this update: typecheck passed, 3 files/16 tests passed, build passed, scoped ESLint passed, `git diff --check` passed. Full lint still has repository-wide formatting debt. Migration SQL parsing, Supabase staging/RLS/login, provider rights, deployment adapter, and pilot remain **NOT RUN / NOT VERIFIED**.

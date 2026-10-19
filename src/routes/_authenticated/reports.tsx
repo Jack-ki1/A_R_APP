@@ -1,110 +1,168 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
-import { artistsQuery, fmt, stageLabel, STAGES, INTEGRITY_LABEL } from "@/lib/artists";
-import { sc } from "@/lib/modules";
-import { Panel, DemoBadge } from "@/components/br-ui";
+import { supabase } from "@/integrations/supabase/client";
+import { artistsQuery, STAGES } from "@/lib/artists";
+import { Panel } from "@/components/br-ui";
 import { Button } from "@/components/ui/button";
+
+const observationsQuery = queryOptions({
+  queryKey: ["report_metric_observations"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("metric_observations")
+      .select("*")
+      .eq("quality_status", "accepted")
+      .order("observed_at", { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+});
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
     meta: [
       { title: "Reports — Breakout Radar" },
-      { name: "description", content: "Weekly A&R summary and exports." },
+      { name: "description", content: "Source-linked private A&R evidence report." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(artistsQuery),
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(artistsQuery),
+      context.queryClient.ensureQueryData(observationsQuery),
+    ]),
   component: Reports,
 });
 
 function Reports() {
-  const { data } = useSuspenseQuery(artistsQuery);
-  const top = [...data].sort((a, b) => (sc(b).priority ?? 0) - (sc(a).priority ?? 0)).slice(0, 5);
-  const csv = () => {
+  const { data: artists } = useSuspenseQuery(artistsQuery);
+  const { data: observations } = useSuspenseQuery(observationsQuery);
+  const byId = new Map(artists.map((artist) => [artist.id, artist]));
+  const exportCsv = () => {
     const head = [
-      "name",
-      "country",
-      "city",
-      "genre",
-      "stage",
-      "integrity",
-      "audience",
-      "growth_30d",
-      "priority",
+      "artist",
+      "metric",
+      "value",
+      "unit",
+      "source_id",
+      "start_at",
+      "end_at",
+      "observed_at",
+      "territory",
+      "rights_status",
+      "quality_status",
     ];
-    const lines = data.map((a) =>
-      [
-        a.name,
-        a.country,
-        a.city,
-        a.genre,
-        stageLabel(a.pipeline_stage),
-        INTEGRITY_LABEL[a.integrity],
-        a.audience_current,
-        a.growth_30d,
-        sc(a).priority ?? "",
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(","),
-    );
+    const lines = observations
+      .filter((item) => byId.has(item.artist_id))
+      .map((item) => {
+        const artist = byId.get(item.artist_id)!;
+        return [
+          artist.name,
+          item.platform_metric_name,
+          item.value_decimal,
+          item.unit,
+          item.source_id,
+          item.start_at,
+          item.end_at,
+          item.observed_at,
+          item.territory ?? "",
+          item.rights_status_snapshot,
+          item.quality_status,
+        ]
+          .map((value) => {
+            const safe = String(value).replace(/"/g, '""');
+            return `"${/^[=+\-@\t\r]/.test(safe) ? `'${safe}` : safe}"`;
+          })
+          .join(",");
+      });
     const url = URL.createObjectURL(
       new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" }),
     );
     Object.assign(document.createElement("a"), {
       href: url,
-      download: "breakout-radar-artists.csv",
+      download: "breakout-radar-sourced-observations.csv",
     }).click();
     URL.revokeObjectURL(url);
   };
   return (
-    <Panel
-      title="Weekly A&R report"
-      sub="Demo data · week ending 14 Sep 2026"
-      action={
-        <div className="flex gap-2 print:hidden">
-          <Button size="sm" variant="outline" onClick={csv}>
-            <Download className="size-4" />
-            CSV
-          </Button>
-          <Button size="sm" onClick={() => window.print()}>
-            <Printer className="size-4" />
-            Print
-          </Button>
-        </div>
-      }
-    >
-      <div className="mb-2">
-        <DemoBadge />
-      </div>
-      <h3 className="mb-2 text-sm font-semibold">Top 5 priorities</h3>
-      <ol className="mb-6 space-y-2 text-sm">
-        {top.map((a, i) => (
-          <li key={a.id}>
-            <b>
-              {i + 1}. {a.name}
-            </b>{" "}
-            — {a.genre}, {a.city} · {fmt(a.audience_current)} audience,{" "}
-            {a.growth_30d == null ? "growth unavailable" : `+${a.growth_30d}% (30d)`} · priority{" "}
-            {sc(a).priority ?? "—"}
-            <div className="text-xs text-muted-foreground">{a.why_now}</div>
-          </li>
-        ))}
-      </ol>
-      <h3 className="mb-2 text-sm font-semibold">Pipeline</h3>
-      <div className="mb-6 grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
-        {STAGES.map((s) => (
-          <div key={s.id} className="rounded-lg border p-2">
-            <div className="text-xs text-muted-foreground">{s.label}</div>
-            <b className="num">{data.filter((a) => a.pipeline_stage === s.id).length}</b>
+    <div className="space-y-4 print:text-black">
+      <Panel
+        title="Evidence report"
+        sub="Operational reports include imported observations with source IDs, observation windows, and rights status. No synthetic priority ranking is shown."
+        action={
+          <div className="flex gap-2 print:hidden">
+            <Button size="sm" variant="outline" disabled={!observations.length} onClick={exportCsv}>
+              <Download className="size-4" />
+              CSV
+            </Button>
+            <Button size="sm" onClick={() => window.print()}>
+              <Printer className="size-4" />
+              Print
+            </Button>
           </div>
-        ))}
-      </div>
-      <h3 className="mb-2 text-sm font-semibold">Integrity</h3>
-      <p className="text-sm">
-        {Object.entries(INTEGRITY_LABEL)
-          .map(([k, v]) => `${v}: ${data.filter((a) => a.integrity === k).length}`)
-          .join(" · ")}
-      </p>
-    </Panel>
+        }
+      >
+        <p className="text-sm">
+          Accepted observations: <b className="num">{observations.length}</b> · monitored artists:{" "}
+          <b className="num">{artists.length}</b>
+        </p>
+        {!observations.length ? (
+          <p className="mt-5 rounded-lg border p-4 text-sm text-muted-foreground">
+            No source-linked metric observations are available. Import authorized, provenance-backed
+            data to produce an evidence report.
+          </p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs text-muted-foreground">
+                <tr>
+                  <th>Artist</th>
+                  <th>Observation</th>
+                  <th>Value</th>
+                  <th>Source ID</th>
+                  <th>Window</th>
+                  <th>Observed</th>
+                  <th>Rights</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {observations
+                  .filter((item) => byId.has(item.artist_id))
+                  .map((item) => (
+                    <tr key={item.id}>
+                      <td className="py-2">{byId.get(item.artist_id)?.name}</td>
+                      <td>{item.platform_metric_name}</td>
+                      <td className="num">
+                        {item.value_decimal} {item.unit}
+                      </td>
+                      <td className="font-mono text-xs">{item.source_id.slice(0, 8)}</td>
+                      <td>
+                        {item.start_at} – {item.end_at}
+                      </td>
+                      <td>{new Date(item.observed_at).toLocaleDateString()}</td>
+                      <td>{item.rights_status_snapshot}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+      <Panel
+        title="Pipeline overview"
+        sub="Counts are workflow state, not evidence of commercial performance."
+      >
+        <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
+          {STAGES.map((stage) => (
+            <div key={stage.id} className="rounded-lg border p-2">
+              <div className="text-xs text-muted-foreground">{stage.label}</div>
+              <b className="num">
+                {artists.filter((artist) => artist.pipeline_stage === stage.id).length}
+              </b>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </div>
   );
 }

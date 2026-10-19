@@ -88,27 +88,36 @@ export type Database = {
         Row: {
           artist_id: string;
           created_at: string;
+          evidence_json: Json;
           id: string;
           notes: string | null;
           reviewer: string;
+          reviewer_user_id: string | null;
+          rubric_version: string;
           scores: Json;
           verdict: string;
         };
         Insert: {
           artist_id: string;
           created_at?: string;
+          evidence_json?: Json;
           id?: string;
           notes?: string | null;
           reviewer?: string;
+          reviewer_user_id?: string | null;
+          rubric_version?: string;
           scores?: Json;
           verdict: string;
         };
         Update: {
           artist_id?: string;
           created_at?: string;
+          evidence_json?: Json;
           id?: string;
           notes?: string | null;
           reviewer?: string;
+          reviewer_user_id?: string | null;
+          rubric_version?: string;
           scores?: Json;
           verdict?: string;
         };
@@ -361,8 +370,10 @@ export type Database = {
         Row: {
           artist_id: string;
           created_at: string;
+          evidence_json: Json;
           id: string;
           is_demo: boolean;
+          opened_by: string | null;
           reason: string;
           resolution: string | null;
           resolved_at: string | null;
@@ -372,8 +383,10 @@ export type Database = {
         Insert: {
           artist_id: string;
           created_at?: string;
+          evidence_json?: Json;
           id?: string;
           is_demo?: boolean;
+          opened_by?: string | null;
           reason: string;
           resolution?: string | null;
           resolved_at?: string | null;
@@ -383,8 +396,10 @@ export type Database = {
         Update: {
           artist_id?: string;
           created_at?: string;
+          evidence_json?: Json;
           id?: string;
           is_demo?: boolean;
+          opened_by?: string | null;
           reason?: string;
           resolution?: string | null;
           resolved_at?: string | null;
@@ -400,6 +415,75 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      integrity_decisions: {
+        Row: {
+          id: string;
+          case_id: string;
+          artist_id: string;
+          decided_by: string;
+          outcome: Database["public"]["Enums"]["integrity_class"];
+          reason: string;
+          evidence_ids: Json;
+          decided_at: string;
+        };
+        Insert: {
+          id?: string;
+          case_id: string;
+          artist_id: string;
+          decided_by: string;
+          outcome: Database["public"]["Enums"]["integrity_class"];
+          reason: string;
+          evidence_ids?: Json;
+          decided_at?: string;
+        };
+        Update: {
+          id?: string;
+          case_id?: string;
+          artist_id?: string;
+          decided_by?: string;
+          outcome?: Database["public"]["Enums"]["integrity_class"];
+          reason?: string;
+          evidence_ids?: Json;
+          decided_at?: string;
+        };
+        Relationships: [];
+      };
+      workflow_history: {
+        Row: {
+          id: string;
+          artist_id: string;
+          entity: string;
+          from_state: string | null;
+          to_state: string;
+          changed_by: string;
+          changed_at: string;
+          rationale: string;
+          evidence_refs: Json;
+        };
+        Insert: {
+          id?: string;
+          artist_id: string;
+          entity: string;
+          from_state?: string | null;
+          to_state: string;
+          changed_by: string;
+          changed_at?: string;
+          rationale: string;
+          evidence_refs?: Json;
+        };
+        Update: {
+          id?: string;
+          artist_id?: string;
+          entity?: string;
+          from_state?: string | null;
+          to_state?: string;
+          changed_by?: string;
+          changed_at?: string;
+          rationale?: string;
+          evidence_refs?: Json;
+        };
+        Relationships: [];
       };
       data_sources: {
         Row: {
@@ -714,6 +798,34 @@ export type Database = {
       set_audience_review_cadence: {
         Args: { p_cadence: string };
         Returns: string;
+      };
+      save_artistic_review: {
+        Args: {
+          p_artist_id: string;
+          p_scores: Json;
+          p_verdict: string;
+          p_notes: string;
+          p_evidence: Json;
+        };
+        Returns: string;
+      };
+      resolve_integrity_case: {
+        Args: {
+          p_case_id: string;
+          p_outcome: Database["public"]["Enums"]["integrity_class"];
+          p_reason: string;
+          p_evidence_ids: Json;
+        };
+        Returns: string;
+      };
+      move_artist_stage: {
+        Args: {
+          p_artist_id: string;
+          p_stage: Database["public"]["Enums"]["pipeline_stage"];
+          p_rationale: string;
+          p_evidence_refs?: Json;
+        };
+        Returns: undefined;
       };
     };
     Enums: {

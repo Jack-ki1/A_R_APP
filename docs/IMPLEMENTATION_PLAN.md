@@ -29,21 +29,22 @@
 
 ## Phase 3 — human review, integrity and operations
 
-1. Add server-derived reviewer IDs and rubric versions; require separate reviewer sign-off for signing consideration.
-2. Make integrity decisions atomic with decision history and evidence references; preserve `unknown` as unreviewed.
-3. Add guarded pipeline transitions, ownership, next action, deadlines and workflow history.
-4. Generate private reports/alerts from sourced observations only.
+1. **Implemented in migration 0005 and UI:** server-derived reviewer IDs, rubric versions, evidence references, atomic review insert/status update, and distinct reviewer count for signing consideration.
+2. **Implemented in migration 0005 and UI:** atomic integrity case resolution, immutable decision row, actor, reason, outcome, and audit event. Unknown remains an allowed outcome; suspicion remains a human classification.
+3. **Implemented in migration 0005 and UI:** guarded stage RPC with rationale, server role check, audit trigger, and workflow history. Stage rationale is required; signing requires Head of A&R/Admin and two distinct reviewers.
+4. **Implemented in UI:** reports export accepted source-linked metric observations with source ID, window, freshness, territory, and rights status. Demo alerts and cases are excluded from operational views. Rule-generated alerts remain unimplemented until real ingestion rules exist.
+5. **Pending external validation:** all RPC behavior and role boundaries require migration application and adversarial tests in staging.
 
 ## Phase 4 — research and backtesting
 
-1. Agree on target outcome, eligible cohorts, scout capacity K, markets/genres and source training rights.
-2. Capture point-in-time feature snapshots and outcomes; keep censored/unobserved outcomes explicit.
-3. Compare transparent baselines under rolling chronological splits; publish coverage and uncertainty before any probabilities.
-4. Keep model registry state `not_trained` until artifacts and evaluation evidence exist.
+1. **Product status implemented:** predictions page reports `not trained`; backtesting page says no validated backtest is available. Removed demo-derived forecast error tables and heuristic ranking from the prediction surface.
+2. Agree on target outcome, eligible cohorts, scout capacity K, markets/genres and source training rights.
+3. Capture point-in-time feature snapshots and outcomes; keep censored/unobserved outcomes explicit.
+4. Compare transparent baselines under rolling chronological splits; publish coverage and uncertainty before any probabilities. This research work is blocked by absent licensed history and outcome labels.
 
 ## Phase 5 — pilot and hardening
 
-Run a private label pilot with recovery procedures, provider outage drills, role testing, accessibility checks, costs/rights review and A&R feedback. Deploy only through the verified runtime and approved staging-to-production procedure.
+**Preparation implemented:** private pilot runbook and CI workflow for lockfile install, typecheck, unit tests, and build. The pilot itself, recovery drills, full role matrix, accessibility review, hosting adapter verification, and cost/rights review require label-owned environments and staff; they have not been claimed as completed.
 
 ## Risks and gates
 

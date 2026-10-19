@@ -21,11 +21,14 @@ operational analytics, or which deployment runtime is active. See
 weighted indexes are unvalidated heuristics; they are not trained models.
 
 The workspace requires invited team accounts. Apply and verify migrations
-`0003_secure_workspace.sql` and `0004_evidence_foundation.sql` in staging before
-deployment; migration `0003` removes temporary anonymous review-mode access.
-Disable public sign-ups in Supabase Auth and invite team members through the
-trusted Supabase dashboard. Never apply migrations to production without an
-approved backup and rollout plan.
+`0003_secure_workspace.sql` through `0005_auditable_ar_workflows.sql` in staging
+before deployment. Migration `0005` changes user creation so public sign-up
+does not grant the first user admin; invited users are assigned the scout role,
+and the first admin must be bootstrapped manually by an authorized operator.
+Disable public sign-ups in Supabase Auth. Never apply migrations to production
+without an approved backup and rollout plan. See
+[`docs/PILOT_RUNBOOK.md`](docs/PILOT_RUNBOOK.md) for the staged rollout and
+internal pilot gates.
 
 ---
 
@@ -735,10 +738,10 @@ permissions, scoring).
 
 ### 17.1 Must do before real use
 
-- [ ] Verify `0003_secure_workspace.sql` and apply `0004_evidence_foundation.sql` in staging before any production rollout.
+- [ ] Verify `0003_secure_workspace.sql` and apply `0004_evidence_foundation.sql` and `0005_auditable_ar_workflows.sql` in staging before any production rollout.
 - [ ] Disable public sign-ups in Supabase Auth and verify invited account access.
 - [ ] Admin screen to invite users and change roles (Settings).
-- [ ] Record the real author on notes, reviews, cases and tasks.
+- [x] Reviews, integrity decisions, and pipeline transitions record authenticated actors and audit history through guarded RPCs.
 
 ### 17.2 Data
 
@@ -753,7 +756,7 @@ permissions, scoring).
 
 ### 17.3 Intelligence
 
-- [ ] Real trained models replacing the demo weighted indices.
+- [ ] Real trained models; predictions currently remain disabled as unvalidated.
 - [ ] Model versioning stored in the database (currently in code).
 - [ ] Backtests over real historical cohorts with proper metrics
       (precision@k, lift over baseline).

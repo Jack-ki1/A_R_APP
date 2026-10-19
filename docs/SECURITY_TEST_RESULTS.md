@@ -2,7 +2,7 @@
 
 ## Evidence available
 
-Source migrations contain team policies and the `0003_secure_workspace.sql` patch. Migration `0002_next_phase_modules.sql` explicitly granted anon CRUD and `USING (true)` to five tables; `0003` revokes anon access and applies `is_team(auth.uid())` policies. New migration `0004` is authored but not applied; its new tables are read-only under team RLS and writes are limited to role-checked authenticated RPCs. The local repository cannot prove which migrations have been applied to a live project.
+Source migrations contain team policies and the `0003_secure_workspace.sql` patch. Migration `0002_next_phase_modules.sql` explicitly granted anon CRUD and `USING (true)` to five tables; `0003` revokes anon access and applies `is_team(auth.uid())` policies. Migrations `0004` and `0005` are authored but not applied. `0004` limits evidence writes to role-checked RPCs. `0005` adds atomic workflow RPCs, denies direct review/case decision writes, and changes new-user bootstrap so public sign-up cannot grant the first user admin; only invited users are assigned scout automatically. The local repository cannot prove which migrations have been applied to a live project.
 
 ## Test matrix status
 
@@ -16,7 +16,7 @@ Source migrations contain team policies and the `0003_secure_workspace.sql` patc
 | Head of A&R              | signing / integrity / review          | NOT RUN                      |
 | Admin                    | role management / all allowed actions | NOT RUN                      |
 
-Login/invitation, signed recording storage, staging migration and production migration version are also **NOT RUN / NOT VERIFIED**. No migration was applied by this work.
+Login/invitation, signed recording storage, staging migration and production migration version are also **NOT RUN / NOT VERIFIED**. No migration was applied by this work. Review `handle_new_user()` against the actual Supabase Auth schema and invite flow before applying `0005`; the operator must explicitly bootstrap the first admin.
 
 ## Required staging run before release
 
