@@ -13,6 +13,13 @@ MusicBrainz identity lookup. MusicBrainz provides catalog metadata only, not
 audience or momentum analytics. Scores are **0–100 ranking indices, not
 probabilities of success**.
 
+**Operational status:** the checked-in source does not prove which migrations
+are applied to a hosted Supabase project, whether any provider contract permits
+operational analytics, or which deployment runtime is active. See
+[`docs/AUDIT_FINDINGS.md`](docs/AUDIT_FINDINGS.md) and
+[`docs/SECURITY_TEST_RESULTS.md`](docs/SECURITY_TEST_RESULTS.md). The current
+weighted indexes are unvalidated heuristics; they are not trained models.
+
 The workspace requires invited team accounts. Apply migration
 `0003_secure_workspace.sql` before deployment to remove temporary anonymous
 review-mode access. Disable public sign-ups in Supabase Auth and invite team
@@ -205,7 +212,7 @@ the **theme toggle** (sun / moon icon) and the **Alerts** bell.
    │  TanStack Query   ── caching + mutations
    │  Supabase JS      ── talks to the database directly (row-level security)
    ▼
- TanStack Start server (SSR, server functions)  ── runs on an edge worker
+ TanStack Start server (SSR, server functions)  ── deployment runtime must be verified
    ▼
  Supabase backend (Postgres + Auth)
 ```
@@ -213,7 +220,7 @@ the **theme toggle** (sun / moon icon) and the **Alerts** bell.
 ### 3.1 Frontend
 
 - **React 19** with **TanStack Start v1** (full-stack React framework).
-- **Vite 7** build tool.
+- **Vite 8** build tool (see the pinned version in `package.json`).
 - **Tailwind CSS v4**, configured entirely in `src/styles.css`.
 - **shadcn/ui** components (Radix primitives) in `src/components/ui`.
 - **lucide-react** icons, **sonner** toasts.

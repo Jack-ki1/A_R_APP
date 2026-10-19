@@ -22,13 +22,12 @@ export const tableQuery = <
 export const sc = (a: Artist) => (a.scores ?? {}) as Scores;
 export const series = (a: Artist) => (a.series ?? []) as SeriesPoint[];
 
-/** Demo model: transparent weighted index, NOT a probability. */
-export const MODELS = [
+/** Hand-authored heuristics; no training or validation evidence exists. */
+export const HEURISTIC_INDEX_CONFIGS = [
   {
     id: "br-index-v1",
     name: "Breakout Index v1",
-    status: "production",
-    trained: "2026-08-01",
+    validationStatus: "not_validated",
     weights: {
       momentum: 0.3,
       fan_depth: 0.2,
@@ -40,8 +39,7 @@ export const MODELS = [
   {
     id: "br-index-v2",
     name: "Breakout Index v2 (candidate)",
-    status: "shadow",
-    trained: "2026-09-20",
+    validationStatus: "not_validated",
     weights: {
       momentum: 0.25,
       fan_depth: 0.25,
@@ -52,18 +50,37 @@ export const MODELS = [
   },
 ] as const;
 
-export function modelScore(a: Artist, weights: Record<string, number>) {
+export function computeIndex(a: Artist, weights: Record<string, number>, minimumCoverage = 0.8) {
   const s = sc(a) as Record<string, number | null | undefined>;
   let tot = 0,
-    w = 0;
+    observedWeight = 0,
+    totalWeight = 0;
+  const usedFeatures: string[] = [];
+  const missingFeatures: string[] = [];
   for (const [k, v] of Object.entries(weights)) {
+    if (v <= 0 || !Number.isFinite(v)) continue;
+    totalWeight += v;
     const x = s[k];
-    if (x != null) {
+    if (x != null && Number.isFinite(x)) {
       tot += x * v;
-      w += v;
-    }
+      observedWeight += v;
+      usedFeatures.push(k);
+    } else missingFeatures.push(k);
   }
-  return w ? Math.round(tot / w) : null;
+  const coverage = totalWeight > 0 ? observedWeight / totalWeight : 0;
+  const sufficient = coverage >= minimumCoverage && observedWeight > 0;
+  return {
+    value: sufficient ? Math.round(tot / observedWeight) : null,
+    coverage,
+    status: sufficient ? ("sufficient" as const) : ("insufficient_evidence" as const),
+    usedFeatures,
+    missingFeatures,
+  };
+}
+
+export const MODELS = HEURISTIC_INDEX_CONFIGS;
+export function modelScore(a: Artist, weights: Record<string, number>) {
+  return computeIndex(a, weights).value;
 }
 
 /** Backtest: predict from first `cut` months, compare with actual final growth. */
@@ -73,8 +90,10 @@ export function backtest(a: Artist, cut: number) {
   const first = pts[0]!.a,
     last = pts[cut - 1]!.a,
     actual = pts[pts.length - 1]!.a;
+  if (![first, last, actual].every((value) => Number.isFinite(value) && value > 0)) return null;
   const rate = (last / first) ** (1 / (cut - 1));
   const predicted = Math.round(last * rate ** (pts.length - cut));
+  if (!Number.isFinite(predicted)) return null;
   return { predicted, actual, errorPct: Math.round(((predicted - actual) / actual) * 100) };
 }
 

@@ -1,10 +1,52 @@
 // Pure analytics helpers (tested in src/test/analytics.test.ts)
 
-/** Actual-vs-expected multiplier, e.g. 186% growth vs 42% expected → 4.4 */
-export function growthMultiplier(actualPct: number, expectedPct: number): number | null {
-  if (expectedPct <= 0) return null;
+/** Ratio of percentage growth rates; this is not a ratio of audience factors. */
+export function growthRateRatio(
+  actualPct: number | null,
+  expectedPct: number | null,
+): number | null {
+  if (
+    actualPct == null ||
+    expectedPct == null ||
+    !Number.isFinite(actualPct) ||
+    !Number.isFinite(expectedPct) ||
+    expectedPct <= 0
+  )
+    return null;
   return Math.round((actualPct / expectedPct) * 10) / 10;
 }
+
+/** Ratio of final-to-initial audience factors for two percentage changes. */
+export function growthFactorRatio(
+  actualPct: number | null,
+  expectedPct: number | null,
+): number | null {
+  if (
+    actualPct == null ||
+    expectedPct == null ||
+    !Number.isFinite(actualPct) ||
+    !Number.isFinite(expectedPct) ||
+    actualPct <= -100 ||
+    expectedPct <= -100
+  )
+    return null;
+  return Math.round(((1 + actualPct / 100) / (1 + expectedPct / 100)) * 100) / 100;
+}
+
+export function percentChange(previous: number | null, current: number | null): number | null {
+  if (
+    previous == null ||
+    current == null ||
+    !Number.isFinite(previous) ||
+    !Number.isFinite(current) ||
+    previous <= 0
+  )
+    return null;
+  return ((current - previous) / previous) * 100;
+}
+
+/** Backwards-compatible name for the ratio of percentage growth rates. */
+export const growthMultiplier = growthRateRatio;
 
 export interface SegmentShift {
   segment: string;
