@@ -15,13 +15,13 @@ export type MusicBrainzArtist = {
   url: string;
 };
 
-export type ListenBrainzArtist = { name: string; listens: number; mbid: string | null };
+export type ListenBrainzArtist = { name: string; listens: number | null; mbid: string | null };
 
 let musicBrainzLastRequestAt = 0;
 let musicBrainzQueue: Promise<void> = Promise.resolve();
 const musicBrainzCache = new Map<string, { expires: number; artists: MusicBrainzArtist[] }>();
 
-async function waitForMusicBrainzSlot() {
+export async function waitForMusicBrainzSlot() {
   const previous = musicBrainzQueue;
   let release!: () => void;
   musicBrainzQueue = new Promise<void>((resolve) => {
@@ -74,7 +74,10 @@ export const getListenBrainzPulse = createServerFn({ method: "GET" })
       updatedAt: typeof body.payload?.last_updated === "number" ? body.payload.last_updated : null,
       artists: (body.payload?.artists ?? []).map((artist) => ({
         name: String(artist.artist_name ?? "Unknown artist"),
-        listens: Number(artist.listen_count ?? 0),
+        listens:
+          typeof artist.listen_count === "number" && Number.isFinite(artist.listen_count)
+            ? artist.listen_count
+            : null,
         mbid: artist.artist_mbid ?? null,
       })),
     };

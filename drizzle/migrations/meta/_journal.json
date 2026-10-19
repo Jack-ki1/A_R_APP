@@ -29,6 +29,13 @@
       "when": 1792390547681,
       "tag": "0003_secure_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792397594000,
+      "tag": "0004_evidence_foundation",
+      "breakpoints": true
     }
   ]
 }

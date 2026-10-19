@@ -20,10 +20,12 @@ operational analytics, or which deployment runtime is active. See
 [`docs/SECURITY_TEST_RESULTS.md`](docs/SECURITY_TEST_RESULTS.md). The current
 weighted indexes are unvalidated heuristics; they are not trained models.
 
-The workspace requires invited team accounts. Apply migration
-`0003_secure_workspace.sql` before deployment to remove temporary anonymous
-review-mode access. Disable public sign-ups in Supabase Auth and invite team
-members through the trusted Supabase dashboard.
+The workspace requires invited team accounts. Apply and verify migrations
+`0003_secure_workspace.sql` and `0004_evidence_foundation.sql` in staging before
+deployment; migration `0003` removes temporary anonymous review-mode access.
+Disable public sign-ups in Supabase Auth and invite team members through the
+trusted Supabase dashboard. Never apply migrations to production without an
+approved backup and rollout plan.
 
 ---
 
@@ -118,15 +120,15 @@ the **theme toggle** (sun / moon icon) and the **Alerts** bell.
 ### 2.5 Audience (`/audience`)
 
 - Audience snapshots per artist over time (age, city, platform segments).
-- Side-by-side comparison of two snapshots to show "audience morphing" —
-  for example a shift from 18–24 Nairobi listeners toward 25–34 and Kampala.
+- Compare only when source, cohort scheme, denominator, reporting window,
+  rights status, quality and coverage are compatible.
+- Share changes are percentage points; count changes use imported aggregate
+  counts. They do not describe individual movement.
 
 ### 2.6 UGC Intelligence (`/ugc`)
 
-- Ranking of artists by UGC impact index (how much fan-made content is
-  driving growth).
-- Feed of detected UGC moments (fan cover trends, remixes) across artists.
-- Explicit note that no licensed platform demographic data is connected.
+- Explicit `Not connected` state until an authorized UGC provider is configured.
+- Demo scores and event fixtures are not presented as operational monitoring.
 
 ### 2.7 Growth Integrity (`/integrity`)
 
@@ -195,7 +197,10 @@ the **theme toggle** (sun / moon icon) and the **Alerts** bell.
 
 ### 2.15 Data Sources (`/sources`)
 
-- Live MusicBrainz identity search and ListenBrainz community listening pulse, plus a coverage table that labels synthetic metrics and unconnected providers.
+- MusicBrainz search with analyst-confirmed, idempotent `Add to Radar` intake.
+- Rights-attested authorized metric and audience cohort CSV imports with lineage.
+- Admin/Head of A&R can set a precise audience review interval; this preference does not schedule imports.
+- ListenBrainz community pulse and source coverage for unconnected providers.
 
 ### 2.16 Settings (`/settings`)
 
@@ -269,19 +274,23 @@ Each page follows the same pattern:
 
 ## 4. Data model
 
-| Table                | Purpose                                      | Key columns                                                                                                                                                                                                           |
-| -------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `profiles`           | One row per user account                     | `id`, `display_name`                                                                                                                                                                                                  |
-| `user_roles`         | Roles per user (separate table for security) | `user_id`, `role`                                                                                                                                                                                                     |
-| `artists`            | Every monitored artist                       | identity, location, genre, `pipeline_stage`, `integrity`, `artistic_status`, `audience_current`, `growth_30d`, `expected_growth_30d`, `scores` (json), `series` (json), `events` (json), `evidence` (json), `is_demo` |
-| `audience_snapshots` | Audience breakdown at a date                 | `artist_id`, `reference_date`, `window_days`, `source`, `total`, `segments` (json)                                                                                                                                    |
-| `artist_notes`       | Team notes on an artist                      | `artist_id`, `author_name`, `body`                                                                                                                                                                                    |
-| `audit_log`          | Who changed what                             | `entity`, `entity_id`, `action`, `detail`                                                                                                                                                                             |
-| `saved_searches`     | Discover saved filters                       | `name`, `filters` (json)                                                                                                                                                                                              |
-| `integrity_cases`    | Growth integrity queue                       | `artist_id`, `status`, `reason`, `signals`, `resolution`, `resolved_at`                                                                                                                                               |
-| `artistic_reviews`   | Rubric submissions                           | `artist_id`, `reviewer`, `scores`, `verdict`, `notes`                                                                                                                                                                 |
-| `alerts`             | Momentum / integrity alerts                  | `artist_id`, `kind`, `title`, `body`, `is_read`                                                                                                                                                                       |
-| `dev_tasks`          | Artist development plans                     | `artist_id`, `area`, `title`, `due`, `done`                                                                                                                                                                           |
+| Table                                    | Purpose                                      | Key columns                                                                                                                                |
+| ---------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `profiles`                               | One row per user account                     | `id`, `display_name`                                                                                                                       |
+| `user_roles`                             | Roles per user (separate table for security) | `user_id`, `role`                                                                                                                          |
+| `artists`                                | Every monitored artist                       | identity, location, genre, `pipeline_stage`, `integrity`, nullable audience/growth fields, legacy `scores`/`series`/`events`, `is_demo`    |
+| `audience_snapshots`                     | Audience breakdown at a date                 | `artist_id`, `reference_date`, `window_days`, source, cohort scheme, denominator, coverage, rights, `segments` and actual `segment_counts` |
+| `artist_source_accounts`                 | Verified external identities                 | artist, source, external ID, profile URL, reviewer, unique source identity                                                                 |
+| `candidate_intake`                       | Audited artist onboarding                    | artist, submitter, source, pending status, provenance                                                                                      |
+| `data_sources`                           | Provider and rights registry                 | provider, rights state, allowed uses, coverage, retention, connection status                                                               |
+| `ingestion_runs` / `metric_observations` | Import lineage and raw observations          | source, actor, period, observed time, territory, unit/value, rights and quality status                                                     |
+| `artist_notes`                           | Team notes on an artist                      | `artist_id`, `author_name`, `body`                                                                                                         |
+| `audit_log`                              | Who changed what                             | `entity`, `entity_id`, `action`, `detail`                                                                                                  |
+| `saved_searches`                         | Discover saved filters                       | `name`, `filters` (json)                                                                                                                   |
+| `integrity_cases`                        | Growth integrity queue                       | `artist_id`, `status`, `reason`, `signals`, `resolution`, `resolved_at`                                                                    |
+| `artistic_reviews`                       | Rubric submissions                           | `artist_id`, `reviewer`, `scores`, `verdict`, `notes`                                                                                      |
+| `alerts`                                 | Momentum / integrity alerts                  | `artist_id`, `kind`, `title`, `body`, `is_read`                                                                                            |
+| `dev_tasks`                              | Artist development plans                     | `artist_id`, `area`, `title`, `due`, `done`                                                                                                |
 
 Enums:
 
@@ -405,6 +414,7 @@ on conflict (user_id, role) do nothing;
 │       ├── 0001_review_mode_notes.sql
 │       ├── 0002_next_phase_modules.sql
 │       ├── 0003_secure_workspace.sql
+│       ├── 0004_evidence_foundation.sql
 │       └── meta/                # Drizzle journal + snapshots
 ├── eslint.config.js
 ├── package.json
@@ -663,6 +673,10 @@ account. Keep a separate Supabase project for development and production.
   restricts workspace tables to team members, prevents automatic Admin
   assignment to signups, revokes public role-helper execution, and deletes
   generated demo artist records and dependent rows.
+- `0004_evidence_foundation.sql` — adds nullable unmeasured metrics, source
+  identity/intake, ingestion lineage, authorized metric/audience import RPCs,
+  and comparable audience snapshot metadata. Authored here; staging apply and
+  verification are still required.
 - Rules: every new table gets `GRANT`s, RLS enabled, and policies.
   Prefer additive changes (new nullable columns) over renames or drops.
 - Keep `drizzle/schema.ts` as the generated placeholder. Update the Drizzle migration journal and snapshot when adding migrations.
@@ -702,7 +716,9 @@ permissions, scoring).
 
 ## 16. Conventions and rules
 
-- Never edit `src/routeTree.gen.ts` or files in `src/integrations/supabase/`.
+- Never hand-edit `src/routeTree.gen.ts`. Keep
+  `src/integrations/supabase/types.ts` aligned with each reviewed migration;
+  regenerate from a verified schema where tooling is available.
 - New pages: add a file under `src/routes/_authenticated/`, add a
   `head()` with a unique title and description, and add it to `NAV` in
   `_authenticated/route.tsx`.
@@ -719,15 +735,16 @@ permissions, scoring).
 
 ### 17.1 Must do before real use
 
-- [ ] Apply migration `0003_secure_workspace.sql` to the Supabase database.
+- [ ] Verify `0003_secure_workspace.sql` and apply `0004_evidence_foundation.sql` in staging before any production rollout.
 - [ ] Disable public sign-ups in Supabase Auth and verify invited account access.
 - [ ] Admin screen to invite users and change roles (Settings).
 - [ ] Record the real author on notes, reviews, cases and tasks.
 
 ### 17.2 Data
 
-- [ ] Replace synthetic metrics with artist-authorized or contractually
-      licensed feeds; public metadata lookup does not provide streaming data.
+- [ ] Connect a verified source for artist-authorized or contractually
+      licensed feeds; current CSV uploads require operator attestation and
+      manual entry, while public metadata lookup provides no listening data.
 - [ ] Connect short-video / social UGC data with proper licensing.
 - [ ] Live and ticketing data.
 - [ ] Scheduled jobs to refresh data and recompute scores daily.
@@ -793,4 +810,5 @@ permissions, scoring).
 ---
 
 _Internal use only. All demo data is synthetic._
+
 # A_R_APP

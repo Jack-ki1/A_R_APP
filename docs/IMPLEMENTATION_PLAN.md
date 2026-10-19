@@ -3,7 +3,7 @@
 ## Phase 0 — verify, protect, stabilize
 
 1. Establish clean branch and reproducible baseline. **Done:** clean `main`, fetched `origin/main`, created `fix/production-intelligence-foundation`; baseline environment recorded in `AUDIT_FINDINGS.md`.
-2. Make unsupported metrics/model claims explicit. **In this batch:** distinguish growth rate vs growth factor, reject invalid inputs, stop presenting hand-authored weights as trained/production, gate index output on feature coverage, guard the forecast baseline.
+2. Make unsupported metrics/model claims explicit. **Done in commit `1d1a212`:** distinguish growth rate vs growth factor, reject invalid inputs, stop presenting hand-authored weights as trained/production, gate index output on feature coverage, guard the forecast baseline.
 3. Verify auth/RLS in an isolated staging Supabase project. **Blocked on setup:** project URL and credentials are intentionally not requested in chat; a team operator must identify the non-production project and current migration state.
 4. Add CI and baseline reproducibility after the current lint baseline is reconciled. Current lint failure is broad formatting drift, so avoid masking it with a giant unrelated format commit.
 5. Update audit findings and release evidence with actual command results.
@@ -12,20 +12,20 @@
 
 ## Phase 1 — canonical intake and evidence foundation
 
-1. Design additive migrations for nullable unmeasured artist fields, source registry, source accounts, candidate intake, ingestion runs and immutable metric observations. Preserve deployed history; use a new migration only.
-2. Review the migration against the actual migration journal and test on a disposable/staging database. Add dedupe constraints and rollback/recovery notes before any production proposal.
-3. Add authenticated server-side MusicBrainz intake: validated MBID, analyst identity confirmation, idempotent unique source identity, actor/provenance, explicit pending metrics. Keep source search metadata-only.
-4. Add a licensed/artist-authorized CSV import template and validation; persist source, period, territory, unit, rights state and import run. Do not accept records without permission attestation and provenance fields.
-5. Build a sourced observation view and explicit missing/stale states. Keep synthetic fixtures separate and disabled in production.
+1. **Implemented, staging verification pending:** additive migration `0004_evidence_foundation.sql` makes metrics nullable and adds source, identity, intake, ingestion and observation tables/RPCs. No existing migration was rewritten.
+2. **Not run:** migration application, SQL compilation against target PostgreSQL, RLS/integration tests, backup/rollback validation. These require a disposable staging Supabase project.
+3. **Implemented:** authenticated MusicBrainz verification and explicit “Confirm identity & Add to Radar” flow. Dedupe is enforced by canonical MBID and source-account uniqueness; the candidate remains `monitoring_pending` with missing metrics.
+4. **Implemented:** header-only downloadable metric and audience CSV templates, validation, rights-reference/attestation, transactional imports, and per-record lineage. Imported data is not enabled for model training.
+5. **Implemented:** profile displays sourced observations; normal artist queries exclude demo rows; no-data values stay null. Audience comparisons require comparable rights/taxonomy/denominator/coverage and only show count deltas from supplied counts. UGC page now says `Not connected` and does not render fixture scores/events.
 
 **Dependencies:** rights and retention policy, staging Supabase, confirmation of permitted artist exports, deployment runtime choice. No provider credentials should be placed in source control.
 
 ## Phase 2 — audience and UGC
 
-1. Resolve cohort definitions, cadence terminology and suppression threshold with the label.
-2. Add comparability rules and share-point / count deltas; incompatible cohorts show unavailable rather than a comparison.
-3. Integrate only licensed or artist-authorized audience/UGC sources. Record allowed uses, retention, source freshness and coverage per observation.
-4. Implement provider status, retries and durable scheduled jobs only after deployment/runtime and quota decisions.
+1. Comparability rules and upload schema are implemented; cadence preference choices are explicit (`manual`, every 14 days, twice monthly, every two months) and default to `manual`. This records review intent only; no recurring import is scheduled.
+2. Compatible imported snapshots show share-point change and supplied raw-count delta; mismatched or low-coverage cohorts show unavailable.
+3. No platform audience or UGC provider is connected. UI states this clearly; no provider scraping or fabricated posts are used.
+4. Retries/scheduled jobs are not implemented; choose a durable runtime and provider terms/quotas first.
 
 ## Phase 3 — human review, integrity and operations
 

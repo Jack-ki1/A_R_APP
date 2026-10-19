@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { ExternalLink, Search } from "lucide-react";
 import {
@@ -9,6 +10,19 @@ import {
 import { SOURCES } from "@/lib/modules";
 import { Panel } from "@/components/br-ui";
 import { cn } from "@/lib/utils";
+import { dataSourcesQuery, myRolesQuery } from "@/lib/artists";
+import {
+  addMusicBrainzCandidate,
+  importAuthorizedAudienceSnapshots,
+  importAuthorizedMetricRows,
+  setAudienceReviewCadence,
+} from "@/lib/source.functions";
+import {
+  AUDIENCE_CSV_HEADERS,
+  METRIC_CSV_HEADERS,
+  parseAudienceCsv,
+  parseMetricCsv,
+} from "@/lib/metric-import";
 
 export const Route = createFileRoute("/_authenticated/sources")({
   head: () => ({
@@ -28,11 +42,44 @@ export const Route = createFileRoute("/_authenticated/sources")({
 });
 
 function Sources() {
+  const navigate = useNavigate();
   const { pulse, pulseError } = Route.useLoaderData();
+  const queryClient = useQueryClient();
+  const sourceRegistryQuery = useQuery(dataSourcesQuery);
+  const sources = sourceRegistryQuery.data ?? [];
+  const { data: membership } = useQuery(myRolesQuery);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MusicBrainzArtist[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
+  const [intakeMessage, setIntakeMessage] = useState("");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [authorizationReference, setAuthorizationReference] = useState("");
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
+  const [importBusy, setImportBusy] = useState(false);
+  const [audienceCsvFile, setAudienceCsvFile] = useState<File | null>(null);
+  const [audienceImportMessage, setAudienceImportMessage] = useState("");
+  const [audienceImportBusy, setAudienceImportBusy] = useState(false);
+  const [cadenceMessage, setCadenceMessage] = useState("");
+  const cadence =
+    sources.find((source) => source.provider === "artist_authorized_audience_csv")
+      ?.refresh_cadence ?? "manual";
+  const audienceSourceReady = sources.some(
+    (source) => source.provider === "artist_authorized_audience_csv",
+  );
+  const cadenceMutation = useMutation({
+    mutationFn: (value: "manual" | "every_14_days" | "twice_monthly" | "every_2_months") =>
+      setAudienceReviewCadence({ data: { cadence: value } }),
+    onSuccess: ({ cadence: saved }) => {
+      setCadenceMessage(
+        `Preference saved: ${saved.replaceAll("_", " ")}. This does not schedule data collection.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["data_sources"] });
+    },
+    onError: (cause: Error) => setCadenceMessage(cause.message),
+  });
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -45,6 +92,86 @@ function Sources() {
     } finally {
       setBusy(false);
     }
+  }
+  async function addCandidate(artist: MusicBrainzArtist) {
+    setAdding(artist.id);
+    setIntakeMessage("");
+    try {
+      const result = await addMusicBrainzCandidate({
+        data: { mbid: artist.id, confirmIdentity: true },
+      });
+      setIntakeMessage("Identity saved. No audience metrics are available yet.");
+      await queryClient.invalidateQueries({ queryKey: ["artists"] });
+      await navigate({ to: "/artists/$id", params: { id: result.artistId } });
+    } catch (cause) {
+      setIntakeMessage(cause instanceof Error ? cause.message : "Candidate intake failed.");
+    } finally {
+      setAdding(null);
+    }
+  }
+  async function submitImport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!csvFile || !rightsConfirmed || !authorizationReference.trim()) return;
+    setImportBusy(true);
+    setImportMessage("");
+    try {
+      const rows = parseMetricCsv(await csvFile.text());
+      const result = await importAuthorizedMetricRows({
+        data: { authorizationReference: authorizationReference.trim(), rows },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["metric_observations"] });
+      await queryClient.invalidateQueries({ queryKey: ["data_sources"] });
+      setImportMessage(`Import recorded: ${result.accepted} observations. Run ${result.runId}.`);
+      setCsvFile(null);
+    } catch (cause) {
+      setImportMessage(cause instanceof Error ? cause.message : "Metric import failed.");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+  async function submitAudienceImport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!audienceCsvFile || !rightsConfirmed || !authorizationReference.trim()) return;
+    setAudienceImportBusy(true);
+    setAudienceImportMessage("");
+    try {
+      const snapshots = parseAudienceCsv(await audienceCsvFile.text());
+      const result = await importAuthorizedAudienceSnapshots({
+        data: { authorizationReference: authorizationReference.trim(), snapshots },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["snapshots"] });
+      await queryClient.invalidateQueries({ queryKey: ["data_sources"] });
+      setAudienceImportMessage(
+        `${result.inserted} of ${result.received} snapshots added; duplicates were safely skipped.`,
+      );
+      setAudienceCsvFile(null);
+    } catch (cause) {
+      setAudienceImportMessage(cause instanceof Error ? cause.message : "Audience import failed.");
+    } finally {
+      setAudienceImportBusy(false);
+    }
+  }
+  function downloadTemplate() {
+    const blob = new Blob([`${METRIC_CSV_HEADERS.join(",")}\n`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "breakout-radar-authorized-metrics-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+  function downloadAudienceTemplate() {
+    const blob = new Blob([`${AUDIENCE_CSV_HEADERS.join(",")}\n`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "breakout-radar-authorized-audience-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   }
   return (
     <div className="space-y-6">
@@ -81,7 +208,9 @@ function Sources() {
                     {artist.name}
                   </span>
                   <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {artist.listens.toLocaleString()} listens
+                    {artist.listens == null
+                      ? "Count unavailable"
+                      : `${artist.listens.toLocaleString()} listens`}
                   </span>
                 </li>
               ))}
@@ -98,6 +227,15 @@ function Sources() {
         title="Open metadata discovery"
         sub="Search the live MusicBrainz catalog to resolve artist names and identity candidates. This is descriptive metadata, not evidence of popularity or growth."
       >
+        {sourceRegistryQuery.isError && (
+          <p
+            role="status"
+            className="mb-3 rounded-md border border-amber/40 bg-amber/5 p-3 text-xs text-amber"
+          >
+            Source registry unavailable. Apply and verify migration 0004 in staging before enabling
+            artist intake and imports.
+          </p>
+        )}
         <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor="mb-query">
             Artist name
@@ -164,13 +302,155 @@ function Sources() {
                 >
                   Verify identity <ExternalLink className="size-3" />
                 </a>
+                <button
+                  type="button"
+                  disabled={adding === artist.id || sourceRegistryQuery.isError}
+                  onClick={() => void addCandidate(artist)}
+                  className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                >
+                  {adding === artist.id ? "Adding…" : "Confirm identity & Add to Radar"}
+                </button>
               </article>
             ))}
             <p className="text-xs text-muted-foreground">
               Catalog match score is a text-match relevance value, not an artist performance score.
             </p>
+            {intakeMessage && (
+              <p role="status" className="text-sm text-muted-foreground">
+                {intakeMessage}
+              </p>
+            )}
           </div>
         )}
+      </Panel>
+      <Panel
+        title="Import authorized metrics"
+        sub="Import a first-party or licensed export with explicit provenance. Imported observations retain their source, period, territory, unit and rights reference."
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="max-w-2xl text-xs text-muted-foreground">
+            Only import data you are authorized to use for internal analysis. Imports are attributed
+            to the signed-in operator and are not authorized for model training by this workflow.
+          </p>
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="rounded-md border px-3 py-2 text-sm"
+          >
+            Download CSV template
+          </button>
+        </div>
+        <form onSubmit={(event) => void submitImport(event)} className="grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1 text-sm">
+            Authorization reference
+            <input
+              required
+              value={authorizationReference}
+              onChange={(event) => setAuthorizationReference(event.target.value)}
+              placeholder="Agreement, consent, or approved source record"
+              className="h-10 rounded-md border bg-background px-3"
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            CSV file
+            <input
+              required
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => setCsvFile(event.target.files?.[0] ?? null)}
+              className="h-10 rounded-md border bg-background px-3 py-2 text-xs"
+            />
+          </label>
+          <label className="flex items-start gap-2 text-xs text-muted-foreground md:col-span-2">
+            <input
+              type="checkbox"
+              checked={rightsConfirmed}
+              onChange={(event) => setRightsConfirmed(event.target.checked)}
+              className="mt-0.5"
+            />
+            I have verified this source’s authorization, permitted internal use, territory coverage
+            and retention requirements, and the reference above records that basis.
+          </label>
+          <button
+            type="submit"
+            disabled={
+              importBusy ||
+              sourceRegistryQuery.isError ||
+              !csvFile ||
+              !rightsConfirmed ||
+              !authorizationReference.trim()
+            }
+            className="h-10 w-fit rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            {importBusy ? "Importing…" : "Validate & import observations"}
+          </button>
+        </form>
+        {importMessage && (
+          <p role="status" className="mt-3 text-sm text-muted-foreground">
+            {importMessage}
+          </p>
+        )}
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Required columns: {METRIC_CSV_HEADERS.join(", ")}. Every MBID must already be confirmed in
+          the workspace. The batch is all-or-nothing.
+        </p>
+      </Panel>
+      <Panel
+        title="Import authorized audience cohorts"
+        sub="Upload aggregate cohort rows; the app groups them into dated snapshots and checks shares and counts reconcile before import."
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="max-w-2xl text-xs text-muted-foreground">
+            Use the authorization reference and rights confirmation above. Cohort counts must be
+            aggregate, permitted, and sufficiently large under your source’s disclosure policy. The
+            app does not infer person-level movement.
+          </p>
+          <button
+            type="button"
+            onClick={downloadAudienceTemplate}
+            className="rounded-md border px-3 py-2 text-sm"
+          >
+            Download cohort CSV template
+          </button>
+        </div>
+        <form
+          onSubmit={(event) => void submitAudienceImport(event)}
+          className="flex flex-wrap items-end gap-3"
+        >
+          <label className="grid gap-1 text-sm">
+            Audience cohort CSV
+            <input
+              required
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => setAudienceCsvFile(event.target.files?.[0] ?? null)}
+              className="h-10 rounded-md border bg-background px-3 py-2 text-xs"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={
+              audienceImportBusy ||
+              sourceRegistryQuery.isError ||
+              !audienceCsvFile ||
+              !rightsConfirmed ||
+              !authorizationReference.trim()
+            }
+            className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            {audienceImportBusy ? "Importing…" : "Validate & import cohort snapshots"}
+          </button>
+        </form>
+        {audienceImportMessage && (
+          <p role="status" className="mt-3 text-sm text-muted-foreground">
+            {audienceImportMessage}
+          </p>
+        )}
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Required columns: {AUDIENCE_CSV_HEADERS.join(", ")}. Every MBID must be confirmed; each
+          dimension’s shares must sum to 100% and counts to its stated denominator. Duplicate
+          snapshots are skipped.
+        </p>
       </Panel>
       <Panel
         title="Data coverage"
@@ -211,6 +491,47 @@ function Sources() {
             </tbody>
           </table>
         </div>
+      </Panel>
+      <Panel
+        title="Audience review cadence"
+        sub="Choose an exact interval for the team’s manual audience snapshot reviews. This preference does not schedule imports."
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="grid gap-1 text-sm">
+            Preferred interval
+            <select
+              value={cadence}
+              disabled={
+                sourceRegistryQuery.isError ||
+                !audienceSourceReady ||
+                !membership?.roles.some((role) => role === "admin" || role === "head_of_ar") ||
+                cadenceMutation.isPending
+              }
+              onChange={(event) =>
+                cadenceMutation.mutate(
+                  event.target.value as
+                    "manual" | "every_14_days" | "twice_monthly" | "every_2_months",
+                )
+              }
+              className="h-10 rounded-md border bg-background px-3"
+            >
+              <option value="manual">Manual, no target interval</option>
+              <option value="every_14_days">Fortnightly (every 14 days)</option>
+              <option value="twice_monthly">Twice monthly</option>
+              <option value="every_2_months">Every two months</option>
+            </select>
+          </label>
+          {!membership?.roles.some((role) => role === "admin" || role === "head_of_ar") && (
+            <span className="text-xs text-muted-foreground">
+              Only Head of A&R or Admin can change this preference.
+            </span>
+          )}
+        </div>
+        {cadenceMessage && (
+          <p role="status" className="mt-3 text-xs text-muted-foreground">
+            {cadenceMessage}
+          </p>
+        )}
       </Panel>
       <Panel
         title="What public APIs can support"

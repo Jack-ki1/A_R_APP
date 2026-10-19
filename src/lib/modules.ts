@@ -108,7 +108,12 @@ export const SOURCES = [
   { name: "YouTube Data API", kind: "Video discovery", status: "Not connected", fresh: "—" },
   { name: "Spotify", kind: "Artist-authorized / licensed", status: "Not connected", fresh: "—" },
   { name: "TikTok UGC", kind: "UGC intelligence", status: "Not connected", fresh: "—" },
-  { name: "Audience snapshots", kind: "Demographics", status: "Synthetic demo data", fresh: "—" },
+  {
+    name: "Audience cohort imports",
+    kind: "Authorized aggregate cohorts",
+    status: "Manual import available",
+    fresh: "On upload",
+  },
   {
     name: "Growth, alerts & scores",
     kind: "A&R analytics",
@@ -116,5 +121,10 @@ export const SOURCES = [
     fresh: "—",
   },
   { name: "Live & ticketing", kind: "Live demand", status: "Not connected", fresh: "—" },
-  { name: "Artist-provided analytics", kind: "First-party", status: "Not connected", fresh: "—" },
+  {
+    name: "Artist-authorized analytics",
+    kind: "First-party",
+    status: "Manual import available",
+    fresh: "On upload",
+  },
 ];

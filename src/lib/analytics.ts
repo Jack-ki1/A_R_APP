@@ -48,6 +48,86 @@ export function percentChange(previous: number | null, current: number | null): 
 /** Backwards-compatible name for the ratio of percentage growth rates. */
 export const growthMultiplier = growthRateRatio;
 
+export type ComparableSnapshot = {
+  source: string;
+  cohort_scheme: string;
+  denominator_type: string;
+  window_days: number;
+  total: number;
+  coverage: number | null;
+  quality_status: string;
+  rights_status: string;
+};
+
+export function snapshotComparabilityIssue(
+  prior: ComparableSnapshot,
+  current: ComparableSnapshot,
+): string | null {
+  if (!prior.source || prior.source !== current.source) return "Snapshots use different sources.";
+  if (
+    !prior.cohort_scheme ||
+    prior.cohort_scheme === "legacy_unknown" ||
+    prior.cohort_scheme !== current.cohort_scheme
+  )
+    return "Cohort definitions are missing or incompatible.";
+  if (prior.denominator_type === "unknown" || prior.denominator_type !== current.denominator_type)
+    return "Audience denominator definitions are missing or incompatible.";
+  if (prior.window_days !== current.window_days) return "Snapshot windows have different lengths.";
+  if (prior.quality_status !== "accepted" || current.quality_status !== "accepted")
+    return "One or both snapshots have not passed quality review.";
+  if (
+    !["operator_documented", "licensed"].includes(prior.rights_status) ||
+    prior.rights_status !== current.rights_status
+  )
+    return "Rights status is missing or inconsistent.";
+  if (
+    prior.coverage == null ||
+    current.coverage == null ||
+    prior.coverage < 0.8 ||
+    current.coverage < 0.8
+  )
+    return "Snapshot coverage is below the 80% comparison threshold or unavailable.";
+  if (prior.total <= 0 || current.total <= 0) return "Snapshot denominators are unavailable.";
+  return null;
+}
+
+export function latestComparableSnapshotPair<
+  T extends ComparableSnapshot & { reference_date: string },
+>(snapshots: T[]): [T, T] | null {
+  const ordered = [...snapshots].sort((a, b) => b.reference_date.localeCompare(a.reference_date));
+  for (let currentIndex = 0; currentIndex < ordered.length; currentIndex += 1) {
+    const current = ordered[currentIndex]!;
+    for (let priorIndex = currentIndex + 1; priorIndex < ordered.length; priorIndex += 1) {
+      const prior = ordered[priorIndex]!;
+      if (snapshotComparabilityIssue(prior, current) === null) return [prior, current];
+    }
+  }
+  return null;
+}
+
+export function segmentBreakdownIssue(
+  prior: Record<string, number> | undefined,
+  current: Record<string, number> | undefined,
+): string | null {
+  if (!prior || !current || !Object.keys(prior).length || !Object.keys(current).length)
+    return "This dimension is not supplied in both snapshots.";
+  const priorKeys = Object.keys(prior).sort();
+  const currentKeys = Object.keys(current).sort();
+  if (
+    priorKeys.length !== currentKeys.length ||
+    priorKeys.some((key, index) => key !== currentKeys[index])
+  )
+    return "Segment categories differ between snapshots.";
+  for (const shares of [prior, current]) {
+    const values = Object.values(shares);
+    if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100))
+      return "Segment shares contain invalid values.";
+    if (Math.abs(values.reduce((sum, value) => sum + value, 0) - 100) > 1)
+      return "Segment shares do not reconcile to 100%.";
+  }
+  return null;
+}
+
 export interface SegmentShift {
   segment: string;
   priorShare: number;

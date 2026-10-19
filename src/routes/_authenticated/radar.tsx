@@ -72,7 +72,7 @@ function exportCsv(rows: Artist[]) {
   const url = URL.createObjectURL(blob);
   const el = document.createElement("a");
   el.href = url;
-  el.download = "breakouts-demo.csv";
+  el.download = "breakout-radar-observed-candidates.csv";
   el.click();
   URL.revokeObjectURL(url);
 }
@@ -144,7 +144,8 @@ function RadarPage() {
           value={
             artists.filter(
               (a) =>
-                (growthMultiplier(Number(a.growth_30d), Number(a.expected_growth_30d)) ?? 0) >= 3,
+                (growthMultiplier(a.growth_30d, a.expected_growth_30d) ?? 0) >= 3 &&
+                a.growth_30d != null,
             ).length
           }
           label="Breakouts (≥3× expected)"
@@ -157,7 +158,7 @@ function RadarPage() {
         />
         <Kpi
           icon={<Activity className="size-4" />}
-          value={artists.length}
+          value="—"
           label="Audience shifts tracked"
           tone="cyan"
         />
@@ -257,10 +258,12 @@ function RadarPage() {
                     <td className="text-xs">{a.genre}</td>
                     <td className="text-right num">{fmt(a.audience_current)}</td>
                     <td className="text-right font-semibold text-lime num">
-                      +{Number(a.growth_30d)}%
+                      {a.growth_30d == null ? "—" : `+${a.growth_30d}%`}
                     </td>
                     <td className="text-right num">
-                      {growthMultiplier(Number(a.growth_30d), Number(a.expected_growth_30d))}×
+                      {growthMultiplier(a.growth_30d, a.expected_growth_30d) == null
+                        ? "—"
+                        : `${growthMultiplier(a.growth_30d, a.expected_growth_30d)}×`}
                     </td>
                     <td>
                       <div className="flex justify-center">
@@ -273,7 +276,9 @@ function RadarPage() {
                     <td>
                       <IntegrityChip value={a.integrity} />
                     </td>
-                    <td className="text-right num">{a.evidence_confidence}%</td>
+                    <td className="text-right num">
+                      {a.evidence_confidence == null ? "—" : `${a.evidence_confidence}%`}
+                    </td>
                     <td
                       className="max-w-40 truncate text-xs text-muted-foreground"
                       title={a.next_action ?? ""}

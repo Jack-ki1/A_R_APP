@@ -3,10 +3,13 @@ import {
   growthFactorRatio,
   growthMultiplier,
   growthRateRatio,
+  latestComparableSnapshotPair,
   percentChange,
   compareSegments,
   isSuppressed,
   isEligibleClean,
+  snapshotComparabilityIssue,
+  segmentBreakdownIssue,
 } from "@/lib/analytics";
 
 describe("analytics", () => {
@@ -34,5 +37,47 @@ describe("analytics", () => {
   it("suspicious artists are not clean candidates", () => {
     expect(isEligibleClean("suspicious")).toBe(false);
     expect(isEligibleClean("organic")).toBe(true);
+  });
+  it("requires consistent provenance before comparing audience snapshots", () => {
+    const base = {
+      source: "authorized_export",
+      cohort_scheme: "age_market_v1",
+      denominator_type: "unique_audience",
+      window_days: 30,
+      total: 1000,
+      coverage: 0.95,
+      quality_status: "accepted",
+      rights_status: "operator_documented",
+    };
+    expect(snapshotComparabilityIssue(base, base)).toBeNull();
+    expect(snapshotComparabilityIssue(base, { ...base, source: "different" })).toContain("sources");
+    expect(
+      snapshotComparabilityIssue(base, { ...base, cohort_scheme: "legacy_unknown" }),
+    ).toContain("Cohort");
+    expect(snapshotComparabilityIssue(base, { ...base, coverage: 0.2 })).toContain("coverage");
+  });
+  it("selects latest compatible snapshots, skipping a newer incompatible snapshot", () => {
+    const base = {
+      source: "authorized_export",
+      cohort_scheme: "market_v1",
+      denominator_type: "unique_audience",
+      window_days: 30,
+      total: 1000,
+      coverage: 0.9,
+      quality_status: "accepted",
+      rights_status: "licensed",
+    };
+    const old = { ...base, reference_date: "2026-01-01" };
+    const middle = { ...base, reference_date: "2026-02-01" };
+    const newestIncompatible = { ...base, source: "other", reference_date: "2026-03-01" };
+    expect(latestComparableSnapshotPair([old, middle, newestIncompatible])).toEqual([old, middle]);
+  });
+  it("does not turn missing or non-summing segments into zero-valued cohorts", () => {
+    expect(segmentBreakdownIssue(undefined, { Nairobi: 100 })).toContain("not supplied");
+    expect(segmentBreakdownIssue({ Nairobi: 60, Kampala: 40 }, { Nairobi: 100 })).toContain(
+      "categories differ",
+    );
+    expect(segmentBreakdownIssue({ Nairobi: 50 }, { Nairobi: 50 })).toContain("reconcile");
+    expect(segmentBreakdownIssue({ Nairobi: 100 }, { Nairobi: 100 })).toBeNull();
   });
 });
