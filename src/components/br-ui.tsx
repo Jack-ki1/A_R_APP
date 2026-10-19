@@ -72,6 +72,34 @@ export function DemoBadge() {
   );
 }
 
+const statusTone: Record<string, string> = {
+  live: "border-cyan/40 bg-cyan/10 text-cyan",
+  imported: "border-lime/40 bg-lime/10 text-lime",
+  partial: "border-amber/40 bg-amber/10 text-amber",
+  off: "border-border bg-muted text-muted-foreground",
+  unvalidated: "border-violet/40 bg-violet/10 text-violet",
+};
+
+/** Coverage/quality status. DEMO is reserved for real fixtures (see DemoBadge). */
+export function StatusBadge({
+  tone,
+  children,
+}: {
+  tone: keyof typeof statusTone;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "whitespace-nowrap rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+        statusTone[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function Panel({
   title,
   sub,

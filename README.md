@@ -88,7 +88,9 @@ Disable public sign-ups in Supabase Auth, configure allowed redirect URLs, invit
 
 ## Current verification
 
-At the latest local checkpoint, typecheck passed, 16 unit tests passed, the production build passed, and scoped ESLint passed. Supabase migrations, login/RLS role matrix, provider rights, hosted deployment, browser E2E, and private pilot remain unverified. See the two project documents above for the practical next steps.
+At the latest local checkpoint, typecheck passed, 32 unit tests passed, the production build passed, and scoped ESLint passed for every changed file. Repository-wide ESLint still reports the acknowledged pre-existing formatting debt in untouched files.
+
+Supabase migrations, login/RLS role matrix, provider rights, hosted deployment, browser E2E, and private pilot remain unverified. A read-only probe of the configured Supabase project on 19 October 2026 found the migration `0004`/`0005` tables and RPCs absent, so artist intake and authorized imports cannot run there until those migrations are applied by the owner. See `docs/IMPLEMENTATION_STATUS.md` for the evidence and the requested owner inputs.
 
 ---
 
@@ -112,9 +114,13 @@ The Home route is the working overview for an A&R team.
 
 It contains dashboard cards and links to the artist workflow.
 
-It may still render legacy synthetic fixture values when a database includes old demo rows.
+With zero monitored artists it renders a first-run on-ramp: a six-step path from finding an artist through attaching authorized data, plus a three-step progress indicator. It never fills the ranking table with placeholder rows.
 
-Those values are not operational evidence.
+KPIs are ordered as artists monitored, candidates with usable observations, integrity reviews open, artistic reviews due, breakouts, and audience snapshot coverage. Breakouts show an em dash until a growth baseline exists, and the forecast card was removed from the KPI row because no trained model exists.
+
+A source health panel reports the state of every evidence channel (live metadata, imported observations, imported snapshots, UGC not connected, unvalidated model). A failed evidence query renders as an error state, not a zero.
+
+When a clean-cohort filter hides artists whose integrity is unknown, they appear in an "Awaiting integrity verification" queue with an explicit note that unknown is not validated clean and not a fraud finding.
 
 The Home route is not a substitute for the sourced observation table on an artist profile.
 
@@ -134,13 +140,13 @@ The Artists navigation group also contains discovery, pipeline, development plan
 
 ### Discovery
 
-Discovery provides filters for existing monitored artists.
+Discovery combines the MusicBrainz intake search with cohort filters for monitored artists.
 
-The Data Sources section provides MusicBrainz search and Add to Radar intake for a new candidate.
+Both Discovery and Data Sources use the same intake component: search MusicBrainz, verify the identity on the source page, then confirm to add the artist. MusicBrainz identity results must be checked by a person before intake, and the application does not automatically merge ambiguous identities.
 
-MusicBrainz identity results must be checked by a person before intake.
+Cohort tabs are All tracked, Needs first observation, Growth-qualified, Under review, and Action required, each with a live count.
 
-The application does not automatically merge ambiguous identities.
+Momentum and growth thresholds are opt-in checkboxes. Unknown momentum or growth never hides an artist unless the operator actively enables that numeric threshold, so a newly onboarded artist with no metrics still appears in All tracked. Missing values render as an em dash, never as 0%.
 
 ### Pipeline
 
@@ -521,6 +527,14 @@ Running the application build after a route-file change regenerates it.
 `test/metric-import.test.ts` covers CSV parsing, source requirements, and cohort validation.
 
 `test/app-routing.test.tsx` confirms that the generated route tree resolves the root route.
+
+`test/discover.test.ts` covers Discover filtering of unmeasured artists, opt-in thresholds, tab counts, demo exclusion, and integrity cohorts.
+
+`test/first-run.test.tsx` covers the onboarding step model and renders the first-run checklist through a router.
+
+`test/dashboard-pages.test.tsx` renders the Discover and Home routes against a mocked Supabase client to verify the empty-state on-ramp, KPI honesty, tab switching, and the awaiting-verification queue.
+
+`test/fixtures.ts` provides complete artist row fixtures used by those suites.
 
 ## Database reference
 

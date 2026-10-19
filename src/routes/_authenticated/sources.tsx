@@ -1,18 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { ExternalLink, Search } from "lucide-react";
-import {
-  getListenBrainzPulse,
-  searchMusicBrainz,
-  type MusicBrainzArtist,
-} from "@/lib/musicbrainz.functions";
+import { getListenBrainzPulse } from "@/lib/musicbrainz.functions";
 import { SOURCES } from "@/lib/modules";
 import { Panel } from "@/components/br-ui";
+import { ArtistIntakeSearch } from "@/components/artist-intake";
 import { cn } from "@/lib/utils";
 import { dataSourcesQuery, myRolesQuery } from "@/lib/artists";
 import {
-  addMusicBrainzCandidate,
   importAuthorizedAudienceSnapshots,
   importAuthorizedMetricRows,
   setAudienceReviewCadence,
@@ -42,18 +37,11 @@ export const Route = createFileRoute("/_authenticated/sources")({
 });
 
 function Sources() {
-  const navigate = useNavigate();
   const { pulse, pulseError } = Route.useLoaderData();
   const queryClient = useQueryClient();
   const sourceRegistryQuery = useQuery(dataSourcesQuery);
   const sources = sourceRegistryQuery.data ?? [];
   const { data: membership } = useQuery(myRolesQuery);
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<MusicBrainzArtist[] | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [adding, setAdding] = useState<string | null>(null);
-  const [intakeMessage, setIntakeMessage] = useState("");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [authorizationReference, setAuthorizationReference] = useState("");
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
@@ -80,35 +68,6 @@ function Sources() {
     },
     onError: (cause: Error) => setCadenceMessage(cause.message),
   });
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    setResults(null);
-    try {
-      setResults(await searchMusicBrainz({ data: { query } }));
-    } catch {
-      setError("The metadata search is temporarily unavailable. Please wait before retrying.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function addCandidate(artist: MusicBrainzArtist) {
-    setAdding(artist.id);
-    setIntakeMessage("");
-    try {
-      const result = await addMusicBrainzCandidate({
-        data: { mbid: artist.id, confirmIdentity: true },
-      });
-      setIntakeMessage("Identity saved. No audience metrics are available yet.");
-      await queryClient.invalidateQueries({ queryKey: ["artists"] });
-      await navigate({ to: "/artists/$id", params: { id: result.artistId } });
-    } catch (cause) {
-      setIntakeMessage(cause instanceof Error ? cause.message : "Candidate intake failed.");
-    } finally {
-      setAdding(null);
-    }
-  }
   async function submitImport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!csvFile || !rightsConfirmed || !authorizationReference.trim()) return;
@@ -227,101 +186,7 @@ function Sources() {
         title="Open metadata discovery"
         sub="Search the live MusicBrainz catalog to resolve artist names and identity candidates. This is descriptive metadata, not evidence of popularity or growth."
       >
-        {sourceRegistryQuery.isError && (
-          <p
-            role="status"
-            className="mb-3 rounded-md border border-amber/40 bg-amber/5 p-3 text-xs text-amber"
-          >
-            Source registry unavailable. Apply and verify migration 0004 in staging before enabling
-            artist intake and imports.
-          </p>
-        )}
-        <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row">
-          <label className="sr-only" htmlFor="mb-query">
-            Artist name
-          </label>
-          <input
-            id="mb-query"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            minLength={2}
-            maxLength={80}
-            required
-            placeholder="Artist or group name"
-            className="h-10 flex-1 rounded-md border bg-background px-3 text-sm"
-          />
-          <button
-            disabled={busy}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"
-          >
-            <Search className="size-4" />
-            {busy ? "Searching…" : "Search MusicBrainz"}
-          </button>
-        </form>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Searches are sent through the server with an application identifier. Results are not
-          imported or saved automatically. Respect MusicBrainz rate limits.
-        </p>
-        {error && (
-          <p role="alert" className="mt-4 text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        {results && (
-          <div className="mt-5 space-y-2" aria-live="polite">
-            {results.length === 0 && (
-              <p className="py-5 text-sm text-muted-foreground">No matching artists found.</p>
-            )}
-            {results.map((artist) => (
-              <article
-                key={artist.id}
-                className="flex flex-col gap-2 rounded-lg border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <h3 className="font-medium">
-                    {artist.name}
-                    {artist.disambiguation && (
-                      <span className="ml-2 text-sm font-normal text-muted-foreground">
-                        {artist.disambiguation}
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {[artist.type, artist.country, ...artist.tags].filter(Boolean).join(" · ") ||
-                      "No type or tags provided"}
-                  </p>
-                  <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                    MBID {artist.id}
-                  </p>
-                </div>
-                <a
-                  href={artist.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                >
-                  Verify identity <ExternalLink className="size-3" />
-                </a>
-                <button
-                  type="button"
-                  disabled={adding === artist.id || sourceRegistryQuery.isError}
-                  onClick={() => void addCandidate(artist)}
-                  className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
-                >
-                  {adding === artist.id ? "Adding…" : "Confirm identity & Add to Radar"}
-                </button>
-              </article>
-            ))}
-            <p className="text-xs text-muted-foreground">
-              Catalog match score is a text-match relevance value, not an artist performance score.
-            </p>
-            {intakeMessage && (
-              <p role="status" className="text-sm text-muted-foreground">
-                {intakeMessage}
-              </p>
-            )}
-          </div>
-        )}
+        <ArtistIntakeSearch />
       </Panel>
       <Panel
         title="Import authorized metrics"
