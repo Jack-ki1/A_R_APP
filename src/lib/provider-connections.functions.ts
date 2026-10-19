@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { encryptSecret, decryptSecret, keyHint } from "@/lib/crypto";
 
 const SUPPORTED_PROVIDERS = ["youtube", "spotify", "tiktok"] as const;
 
@@ -19,9 +20,12 @@ export const connectProvider = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .limit(1);
     if (roleError || !roles?.length) throw new Error("Workspace access is required.");
+    const encrypted = encryptSecret(data.apiKey);
+    const hint = keyHint(data.apiKey);
     const { data: connectionId, error } = await context.supabase.rpc("connect_provider", {
       p_provider: data.provider,
-      p_api_key: data.apiKey,
+      p_encrypted_key: encrypted,
+      p_key_hint: hint,
     });
     if (error || !connectionId)
       throw new Error(error?.message ?? "Could not store the provider credential.");
@@ -55,11 +59,13 @@ export const testProviderConnection = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .limit(1);
     if (roleError || !roles?.length) throw new Error("Workspace access is required.");
-    const { data: apiKey, error: keyError } = await context.supabase.rpc("get_provider_api_key", {
-      p_provider: data.provider,
-    });
-    if (keyError || !apiKey)
+    const { data: encrypted, error: keyError } = await context.supabase.rpc(
+      "get_provider_api_key",
+      { p_provider: data.provider },
+    );
+    if (keyError || !encrypted)
       throw new Error(keyError?.message ?? "No stored credential found for this provider.");
+    const apiKey = decryptSecret(encrypted);
 
     let ok = false;
     let message = "";
@@ -73,15 +79,15 @@ export const testProviderConnection = createServerFn({ method: "POST" })
         ok = true;
         message = "YouTube API key is valid and the connection works.";
       } else {
-        const body = (await response.json().catch(() => ({}))) as { error?: { message?: string } };
+        const body = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
         message = body.error?.message ?? `YouTube API returned HTTP ${response.status}.`;
       }
     } else if (data.provider === "spotify") {
-      ok = false;
       message =
         "Spotify integration requires an OAuth review. The credential is stored but live calls are not yet enabled.";
     } else if (data.provider === "tiktok") {
-      ok = false;
       message =
         "TikTok integration requires approved research access. The credential is stored but live calls are not yet enabled.";
     }
@@ -105,18 +111,22 @@ export const searchYouTube = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .limit(1);
     if (roleError || !roles?.length) throw new Error("Workspace access is required.");
-    const { data: apiKey, error: keyError } = await context.supabase.rpc("get_provider_api_key", {
-      p_provider: "youtube",
-    });
-    if (keyError || !apiKey)
+    const { data: encrypted, error: keyError } = await context.supabase.rpc(
+      "get_provider_api_key",
+      { p_provider: "youtube" },
+    );
+    if (keyError || !encrypted)
       throw new Error("Connect your YouTube API key in Data Sources before searching.");
+    const apiKey = decryptSecret(encrypted);
 
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(data.query)}&type=video&maxResults=12&key=${encodeURIComponent(apiKey)}`,
       { signal: AbortSignal.timeout(10_000) },
     );
     if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { error?: { message?: string } };
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
       throw new Error(body.error?.message ?? `YouTube API returned HTTP ${response.status}.`);
     }
     const body = (await response.json()) as {

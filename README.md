@@ -252,7 +252,7 @@ Data Sources is accessed from Settings.
 
 It owns MusicBrainz identity lookup, candidate intake, source registry visibility, manual metric import, manual cohort import, and audience review cadence preference.
 
-It also provides per-user provider connections: pick a provider (YouTube, Spotify, TikTok), paste your API key, and it is encrypted with Supabase Vault and stored scoped to your account. The key never appears in the browser or in any query response — the server decrypts it only to call the provider API on your behalf.
+It also provides per-user provider connections: pick a provider (YouTube, Spotify, TikTok), paste your API key, and it is encrypted with AES-256-GCM in the server before it reaches the database, stored scoped to your account. The key never appears in the browser or in any query response — the server decrypts it only to call the provider API on your behalf. Encryption requires the `PROVIDER_ENCRYPTION_KEY` server environment variable.
 
 YouTube Data API is fully wired: connect your key, test the connection, and search for videos live from the Data Sources page. Spotify and TikTok connections are stored but live calls require an OAuth and rights review before enabling.
 

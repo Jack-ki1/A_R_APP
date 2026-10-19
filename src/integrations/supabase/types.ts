@@ -897,7 +897,7 @@ export type Database = {
         Returns: undefined;
       };
       connect_provider: {
-        Args: { p_provider: string; p_api_key: string };
+        Args: { p_provider: string; p_encrypted_key: string; p_key_hint: string };
         Returns: string;
       };
       get_provider_api_key: {

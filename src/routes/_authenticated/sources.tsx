@@ -412,7 +412,7 @@ function Sources() {
       </Panel>
       <Panel
         title="Connect a data source"
-        sub="Link your own provider account. Your API key is encrypted with Supabase Vault and only ever used server-side — it never appears in the browser or in any query response."
+        sub="Link your own provider account. Your API key is encrypted with AES-256-GCM in the server before it reaches the database and only ever used server-side — it never appears in the browser or in any query response."
       >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3">
