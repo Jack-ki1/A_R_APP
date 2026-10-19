@@ -22,7 +22,6 @@ import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPredictionsRouteImport } from './routes/_authenticated/predictions'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
-import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSourcesRouteImport } from './routes/_authenticated/sources'
 import { Route as AuthenticatedUgcRouteImport } from './routes/_authenticated/ugc'
@@ -96,11 +95,6 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -141,7 +135,6 @@ export interface FileRoutesByFullPath {
   '/predictions': typeof AuthenticatedPredictionsRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/reports': typeof AuthenticatedReportsRoute
-  '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/sources': typeof AuthenticatedSourcesRoute
   '/ugc': typeof AuthenticatedUgcRoute
@@ -161,7 +154,6 @@ export interface FileRoutesByTo {
   '/predictions': typeof AuthenticatedPredictionsRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/reports': typeof AuthenticatedReportsRoute
-  '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/sources': typeof AuthenticatedSourcesRoute
   '/ugc': typeof AuthenticatedUgcRoute
@@ -183,7 +175,6 @@ export interface FileRoutesById {
   '/_authenticated/predictions': typeof AuthenticatedPredictionsRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
-  '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/sources': typeof AuthenticatedSourcesRoute
   '/_authenticated/ugc': typeof AuthenticatedUgcRoute
@@ -205,7 +196,6 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/radar'
     | '/reports'
-    | '/review'
     | '/settings'
     | '/sources'
     | '/ugc'
@@ -225,7 +215,6 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/radar'
     | '/reports'
-    | '/review'
     | '/settings'
     | '/sources'
     | '/ugc'
@@ -246,7 +235,6 @@ export interface FileRouteTypes {
     | '/_authenticated/predictions'
     | '/_authenticated/radar'
     | '/_authenticated/reports'
-    | '/_authenticated/review'
     | '/_authenticated/settings'
     | '/_authenticated/sources'
     | '/_authenticated/ugc'
@@ -353,13 +341,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/review': {
-      id: '/_authenticated/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof AuthenticatedReviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -409,7 +390,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPredictionsRoute: typeof AuthenticatedPredictionsRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
-  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSourcesRoute: typeof AuthenticatedSourcesRoute
   AuthenticatedUgcRoute: typeof AuthenticatedUgcRoute
@@ -428,7 +408,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPredictionsRoute: AuthenticatedPredictionsRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
-  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSourcesRoute: AuthenticatedSourcesRoute,
   AuthenticatedUgcRoute: AuthenticatedUgcRoute,

@@ -6,21 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import {
-  Bell,
-  Compass,
-  Gauge,
-  Users,
-  Kanban,
-  Search,
-  PieChart,
-  Star,
-  TrendingUp,
-  FileText,
-  Settings,
-  LogOut,
-  ChevronDown,
-} from "lucide-react";
+import { Compass, Gauge, Users, Search, PieChart, Settings, LogOut, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/br-ui";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -53,7 +39,12 @@ const NAV = [
     to: "/artists",
     label: "Artists",
     icon: Users,
-    children: [{ to: "/discover", label: "Find artists" }],
+    children: [
+      { to: "/discover", label: "Find artists" },
+      { to: "/pipeline", label: "Artist pipeline" },
+      { to: "/development", label: "Development plans" },
+      { to: "/integrity", label: "Growth checks" },
+    ],
   },
   {
     to: "/audience",
@@ -62,33 +53,17 @@ const NAV = [
     children: [{ to: "/ugc", label: "Fan content" }],
   },
   {
-    to: "/review",
-    label: "Reviews",
-    icon: Star,
-    children: [{ to: "/integrity", label: "Growth checks" }],
-  },
-  {
-    to: "/pipeline",
-    label: "Artist pipeline",
-    icon: Kanban,
-    children: [{ to: "/development", label: "Development plans" }],
-  },
-  {
-    to: "/predictions",
-    label: "Forecasts",
-    icon: TrendingUp,
-    children: [{ to: "/backtesting", label: "Forecast accuracy" }],
-  },
-  {
-    to: "/reports",
-    label: "Reports",
-    icon: FileText,
+    to: "/settings",
+    label: "Settings",
+    icon: Settings,
     children: [
+      { to: "/predictions", label: "Forecast readiness" },
+      { to: "/backtesting", label: "Backtest readiness" },
+      { to: "/reports", label: "Reports & exports" },
       { to: "/alerts", label: "Alerts" },
       { to: "/sources", label: "Data sources" },
     ],
   },
-  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 function Shell() {
@@ -201,7 +176,7 @@ function Shell() {
           <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
             <Compass className="size-3.5" /> Africa · internal workspace
             <span className="mx-2 h-4 w-px bg-border" />
-            Analytics use synthetic fixtures · metadata lookup is live
+            Evidence-led workspace · metadata lookup and authorized imports
           </div>
           <ThemeToggle />
           <button
@@ -213,13 +188,6 @@ function Shell() {
           >
             <LogOut className="size-4" />
           </button>
-          <Link
-            to="/alerts"
-            aria-label="Alerts"
-            className="relative rounded-lg p-2 hover:bg-accent"
-          >
-            <Bell className="size-4" />
-          </Link>
           <details className="relative md:hidden">
             <summary className="cursor-pointer list-none rounded-lg border px-3 py-2 text-xs font-medium">
               Sections
