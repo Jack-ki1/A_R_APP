@@ -14,17 +14,14 @@ import {
   Kanban,
   Search,
   PieChart,
-  Video,
-  ShieldAlert,
   Star,
   TrendingUp,
-  FlaskConical,
-  Sprout,
   FileText,
-  Database,
   Settings,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
+import { useState } from "react";
 import { Logo } from "@/components/br-ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -51,47 +48,130 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const NAV = [
-  { to: "/radar", label: "Command Centre", icon: Gauge },
-  { to: "/artists", label: "Artists", icon: Users },
-  { to: "/discover", label: "Discover", icon: Compass },
-  { to: "/audience", label: "Audience", icon: PieChart },
-  { to: "/ugc", label: "UGC Intelligence", icon: Video },
-  { to: "/integrity", label: "Growth Integrity", icon: ShieldAlert },
-  { to: "/review", label: "Artistic Review", icon: Star },
-  { to: "/pipeline", label: "A&R Pipeline", icon: Kanban },
-  { to: "/predictions", label: "Predictions", icon: TrendingUp },
-  { to: "/backtesting", label: "Backtesting", icon: FlaskConical },
-  { to: "/alerts", label: "Alerts", icon: Bell },
-  { to: "/development", label: "Artist Development", icon: Sprout },
-  { to: "/reports", label: "Reports", icon: FileText },
-  { to: "/sources", label: "Data Sources", icon: Database },
+  { to: "/radar", label: "Home", icon: Gauge },
+  {
+    to: "/artists",
+    label: "Artists",
+    icon: Users,
+    children: [{ to: "/discover", label: "Find artists" }],
+  },
+  {
+    to: "/audience",
+    label: "Audience",
+    icon: PieChart,
+    children: [{ to: "/ugc", label: "Fan content" }],
+  },
+  {
+    to: "/review",
+    label: "Reviews",
+    icon: Star,
+    children: [{ to: "/integrity", label: "Growth checks" }],
+  },
+  {
+    to: "/pipeline",
+    label: "Artist pipeline",
+    icon: Kanban,
+    children: [{ to: "/development", label: "Development plans" }],
+  },
+  {
+    to: "/predictions",
+    label: "Forecasts",
+    icon: TrendingUp,
+    children: [{ to: "/backtesting", label: "Forecast accuracy" }],
+  },
+  {
+    to: "/reports",
+    label: "Reports",
+    icon: FileText,
+    children: [
+      { to: "/alerts", label: "Alerts" },
+      { to: "/sources", label: "Data sources" },
+    ],
+  },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 function Shell() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [collapsedGroup, setCollapsedGroup] = useState<string | null>(null);
+  const destinations = NAV.flatMap((group) => [
+    { to: group.to, label: group.label },
+    ...("children" in group ? group.children.map((child) => child) : []),
+  ]);
 
   return (
     <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 md:flex">
         <Logo className="mb-8 px-2" />
-        <nav className="space-y-0.5 overflow-y-auto" aria-label="Main">
-          {NAV.map((n) => {
-            const active = path.startsWith(n.to);
+        <nav className="space-y-1 overflow-y-auto" aria-label="Main">
+          {NAV.map((group) => {
+            const active =
+              path.startsWith(group.to) ||
+              ("children" in group && group.children.some((child) => path.startsWith(child.to)));
+            const expanded =
+              "children" in group &&
+              (openGroup === group.label || (active && collapsedGroup !== group.label));
             return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground glow"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent",
+              <div key={group.to}>
+                <div className="flex items-center">
+                  <Link
+                    to={group.to}
+                    onClick={() => {
+                      setOpenGroup(group.label);
+                      setCollapsedGroup(null);
+                    }}
+                    className={cn(
+                      "flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      active
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground glow"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent",
+                    )}
+                  >
+                    <group.icon className="size-4 shrink-0" /> {group.label}
+                  </Link>
+                  {"children" in group && (
+                    <button
+                      type="button"
+                      aria-label={`${expanded ? "Hide" : "Show"} ${group.label} pages`}
+                      aria-expanded={expanded}
+                      onClick={() => {
+                        if (expanded) {
+                          setOpenGroup(null);
+                          setCollapsedGroup(group.label);
+                        } else {
+                          setCollapsedGroup(null);
+                          setOpenGroup(group.label);
+                        }
+                      }}
+                      className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <ChevronDown
+                        className={cn("size-4 transition-transform", expanded && "rotate-180")}
+                      />
+                    </button>
+                  )}
+                </div>
+                {"children" in group && expanded && (
+                  <div className="ml-5 space-y-0.5 border-l border-sidebar-border pl-3 pt-1">
+                    {group.children.map((child) => (
+                      <Link
+                        key={child.to}
+                        to={child.to}
+                        className={cn(
+                          "block rounded-md px-3 py-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          path.startsWith(child.to)
+                            ? "bg-sidebar-accent font-medium text-sidebar-foreground"
+                            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                        )}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 )}
-              >
-                <n.icon className="size-4" /> {n.label}
-              </Link>
+              </div>
             );
           })}
         </nav>
@@ -140,18 +220,28 @@ function Shell() {
           >
             <Bell className="size-4" />
           </Link>
-          <nav className="flex gap-1 overflow-x-auto md:hidden">
-            {NAV.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                aria-label={n.label}
-                className="rounded-lg p-2 hover:bg-accent"
-              >
-                <n.icon className="size-4" />
-              </Link>
-            ))}
-          </nav>
+          <details className="relative md:hidden">
+            <summary className="cursor-pointer list-none rounded-lg border px-3 py-2 text-xs font-medium">
+              Sections
+            </summary>
+            <nav
+              aria-label="All sections"
+              className="absolute right-0 top-full z-30 mt-2 max-h-[70vh] w-56 overflow-y-auto rounded-xl border bg-panel p-2 shadow-xl"
+            >
+              {destinations.map((destination) => (
+                <a
+                  key={destination.to}
+                  href={destination.to}
+                  className={cn(
+                    "block rounded-md px-3 py-2 text-sm hover:bg-accent",
+                    path.startsWith(destination.to) && "bg-accent font-medium",
+                  )}
+                >
+                  {destination.label}
+                </a>
+              ))}
+            </nav>
+          </details>
         </header>
         <main className="flex-1 p-4 md:p-6">
           <Outlet />
