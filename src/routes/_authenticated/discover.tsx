@@ -20,6 +20,7 @@ import { RosterPanel } from "@/components/roster-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import hero from "@/assets/hero.jpg";
 
 export const Route = createFileRoute("/_authenticated/discover")({
   head: () => ({
@@ -85,13 +86,55 @@ function Discover() {
   });
 
   return (
-    <div className="space-y-4">
-      <Panel
-        title="Find an artist"
-        sub="Search MusicBrainz for a verified identity, then confirm and add it to the radar. Identity metadata only — no popularity or growth is invented."
-      >
-        <ArtistIntakeSearch />
-      </Panel>
+    <div className="space-y-6">
+      <section className="dark relative isolate overflow-hidden rounded-2xl border border-cyan/20 text-foreground shadow-[0_24px_70px_-48px_var(--cyan)]">
+        <img
+          src={hero}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-right"
+          width={1600}
+          height={640}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,oklch(0.12_0.03_255)_0%,oklch(0.12_0.03_255_/_96%)_38%,oklch(0.12_0.03_255_/_76%)_68%,oklch(0.12_0.03_255_/_48%)_100%)]"
+        />
+        <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)] lg:items-center lg:gap-10 lg:p-8">
+          <div className="max-w-xl py-2">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan">
+              <span className="size-1.5 rounded-full bg-lime shadow-[0_0_10px_var(--lime)]" />
+              Discover · A&amp;R intelligence
+            </div>
+            <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+              Find tomorrow’s stars <span className="text-lime">today.</span>
+            </h1>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-slate-200/80">
+              Start with a verified artist identity, then follow the evidence through every stage of
+              your A&amp;R journey.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-medium text-slate-100/85">
+              {["Discover", "Analyse", "Evaluate", "Decide", "Develop"].map((stage, index) => (
+                <span
+                  key={stage}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/40 px-2.5 py-1.5"
+                >
+                  <span className="font-display text-[10px] text-lime">{index + 1}</span>
+                  {stage}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-slate-950/75 p-4 shadow-xl backdrop-blur-md sm:p-5">
+            <h2 className="font-display text-base font-semibold">Find an artist</h2>
+            <p className="mb-4 mt-1 text-xs leading-5 text-slate-300/75">
+              Search MusicBrainz for a verified identity, then confirm and add it to the radar.
+              Identity metadata only — no popularity or growth is invented.
+            </p>
+            <ArtistIntakeSearch />
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
         <Panel title="Discover" sub={`${rows.length} of ${data.length} artists match`}>

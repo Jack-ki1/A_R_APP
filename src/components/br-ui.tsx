@@ -4,22 +4,26 @@ import { portraitStyle, INTEGRITY_LABEL } from "@/lib/artists";
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <svg viewBox="0 0 32 24" className="h-6 w-8 text-lime" aria-hidden>
-        <path
-          d="M1 12h5l3-8 5 16 4-12 3 6 3-2h7"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <div className="leading-none">
-        <div className="font-display text-sm font-bold tracking-wide">
+    <div className={cn("flex items-center gap-2.5", className)}>
+      <div className="grid size-9 place-items-center rounded-xl bg-lime/15 border border-lime/30 text-lime">
+        <svg viewBox="0 0 32 24" className="h-5 w-7" aria-hidden>
+          <path
+            d="M1 12h5l3-8 5 16 4-12 3 6 3-2h7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <div className="leading-tight">
+        <div className="font-display text-sm font-black tracking-wider text-foreground">
           BREAKOUT <span className="text-lime">RADAR</span>
         </div>
-        <div className="text-[10px] text-muted-foreground">A&R Intelligence</div>
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          A&amp;R Intelligence Platform
+        </div>
       </div>
     </div>
   );
@@ -177,21 +181,23 @@ export function Kpi({
   icon: ReactNode;
   value: ReactNode;
   label: string;
-  tone?: "lime" | "cyan" | "violet" | "amber";
+  tone?: "lime" | "cyan" | "violet" | "amber" | "rose" | "orange";
 }) {
   const tones = {
-    lime: "bg-lime/15 text-lime",
-    cyan: "bg-cyan/15 text-cyan",
-    violet: "bg-violet/20 text-violet",
-    amber: "bg-amber/15 text-amber",
+    lime: "bg-lime/20 text-lime border border-lime/30",
+    cyan: "bg-cyan/20 text-cyan border border-cyan/30",
+    violet: "bg-violet/20 text-violet border border-violet/30",
+    amber: "bg-amber/20 text-amber border border-amber/30",
+    rose: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+    orange: "bg-orange-500/20 text-orange-400 border border-orange-500/30",
   };
   return (
-    <div className="panel p-4">
-      <div className={cn("mb-3 grid size-9 place-items-center rounded-lg", tones[tone])}>
+    <div className="panel p-4 transition-all hover:border-lime/40">
+      <div className={cn("mb-3 grid size-10 place-items-center rounded-xl", tones[tone])}>
         {icon}
       </div>
       <div className="font-display text-2xl font-bold num">{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
     </div>
   );
 }
