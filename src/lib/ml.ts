@@ -16,6 +16,8 @@ type Model = {
 
 const model = modelJson as Model;
 
+export type ModelStatus = "unvalidated" | "candidate" | "approved" | "deprecated";
+
 export type ArtistFeatures = {
   growth30d: number | null;
   expectedGrowth30d: number | null;
@@ -35,6 +37,7 @@ export type Prediction = {
   modelVersion: string;
   featuresUsed: Record<string, number | null>;
   disclaimer: string;
+  isApproved: boolean;
 };
 
 function integrityEncoded(integrity: string): number {
@@ -95,6 +98,10 @@ function confidenceFromCoverage(
   return "low";
 }
 
+/** Operational feature gate: synthetic models are marked unapproved */
+export const IS_MODEL_APPROVED = false;
+export const CURRENT_MODEL_STATUS: ModelStatus = "unvalidated";
+
 export function predictBreakout(a: ArtistFeatures): Prediction {
   const featuresUsed = extractFeatures(a);
   const score = computeScore(featuresUsed);
@@ -105,6 +112,7 @@ export function predictBreakout(a: ArtistFeatures): Prediction {
       modelVersion: model.version,
       featuresUsed,
       disclaimer: model.disclaimer,
+      isApproved: IS_MODEL_APPROVED,
     };
   return {
     score: Math.round(score * 10000) / 10000,
@@ -112,6 +120,7 @@ export function predictBreakout(a: ArtistFeatures): Prediction {
     modelVersion: model.version,
     featuresUsed,
     disclaimer: model.disclaimer,
+    isApproved: IS_MODEL_APPROVED,
   };
 }
 
@@ -124,5 +133,7 @@ export function getModelInfo() {
     trainingData: model.training_data,
     nSamples: model.n_samples,
     disclaimer: model.disclaimer,
+    status: CURRENT_MODEL_STATUS,
+    isApproved: IS_MODEL_APPROVED,
   };
 }

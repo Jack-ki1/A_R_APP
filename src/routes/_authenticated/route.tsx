@@ -6,7 +6,19 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { Compass, Gauge, Search, Settings, LogOut } from "lucide-react";
+import {
+  Search,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  GitBranch,
+  Rocket,
+  Settings,
+  Bell,
+  Database,
+  FileText,
+  LogOut,
+  Compass,
+} from "lucide-react";
 import { Logo } from "@/components/br-ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -32,10 +44,42 @@ export const Route = createFileRoute("/_authenticated")({
   component: Shell,
 });
 
+/** Exactly five top-level sidebar sections per design mandate */
 const NAV = [
-  { to: "/radar", label: "Home", icon: Gauge },
-  { to: "/discover", label: "Find artists", icon: Search, match: ["/artists"] },
-  { to: "/settings", label: "Settings", icon: Settings },
+  {
+    to: "/discover",
+    label: "Discover",
+    icon: Search,
+    match: ["/artists"],
+    search: { q: undefined },
+  },
+  {
+    to: "/analyse",
+    label: "Analyse",
+    icon: ChartNoAxesCombined,
+    match: ["/audience", "/ugc"],
+    search: { tab: undefined, artistId: undefined },
+  },
+  {
+    to: "/evaluate",
+    label: "Evaluate",
+    icon: ClipboardCheck,
+    search: { tab: undefined, artistId: undefined },
+  },
+  {
+    to: "/decide",
+    label: "Decide",
+    icon: GitBranch,
+    match: ["/pipeline", "/integrity"],
+    search: { tab: undefined, artistId: undefined },
+  },
+  {
+    to: "/develop",
+    label: "Develop",
+    icon: Rocket,
+    match: ["/development"],
+    search: { tab: undefined, artistId: undefined },
+  },
 ] as const;
 
 function Shell() {
@@ -56,6 +100,7 @@ function Shell() {
               <Link
                 key={group.to}
                 to={group.to}
+                search={group.search}
                 className={cn(
                   "flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   active
@@ -69,12 +114,13 @@ function Shell() {
           })}
         </nav>
         <div className="mt-auto rounded-lg bg-sidebar-accent p-3 text-xs">
-          <div className="font-medium">A&R Team</div>
-          <div className="text-muted-foreground">Internal use only</div>
+          <div className="font-medium text-foreground">A&amp;R Talent Intelligence</div>
+          <div className="text-muted-foreground">Internal label workspace</div>
         </div>
       </aside>
+
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b bg-background/85 px-4 backdrop-blur md:px-6">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur md:px-6">
           <form
             className="relative max-w-md flex-1"
             onSubmit={(e) => {
@@ -91,23 +137,66 @@ function Shell() {
               className="h-9 w-full rounded-lg border bg-panel pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </form>
-          <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-            <Compass className="size-3.5" /> Africa · internal workspace
-            <span className="mx-2 h-4 w-px bg-border" />
-            Evidence-led workspace · metadata lookup and authorized imports
+
+          <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground lg:flex">
+            <Compass className="size-3.5" /> Africa · Internal
+            <span className="mx-1 h-3.5 w-px bg-border" />
+            Evidence-led discovery &amp; development
           </div>
-          <ThemeToggle />
-          <button
-            type="button"
-            aria-label="Sign out"
-            title="Sign out"
-            onClick={() => void supabase.auth.signOut()}
-            className="rounded-lg p-2 hover:bg-accent"
-          >
-            <LogOut className="size-4" />
-          </button>
+
+          <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
+            <Link
+              to="/decide"
+              search={{ tab: "briefs", artistId: undefined }}
+              title="Decision Briefs & Reports"
+              aria-label="Decision Briefs & Reports"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition"
+            >
+              <FileText className="size-4" />
+            </Link>
+
+            <Link
+              to="/settings"
+              title="Data Sources & Imports"
+              aria-label="Data Sources & Imports"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition"
+            >
+              <Database className="size-4" />
+            </Link>
+
+            <Link
+              to="/settings"
+              title="Alerts & Notifications"
+              aria-label="Alerts & Notifications"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition"
+            >
+              <Bell className="size-4" />
+            </Link>
+
+            <Link
+              to="/settings"
+              title="Admin & Settings"
+              aria-label="Admin & Settings"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition"
+            >
+              <Settings className="size-4" />
+            </Link>
+
+            <ThemeToggle />
+
+            <button
+              type="button"
+              aria-label="Sign out"
+              title="Sign out"
+              onClick={() => void supabase.auth.signOut()}
+              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-destructive transition"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </div>
+
           <details className="relative md:hidden">
-            <summary className="cursor-pointer list-none rounded-lg border px-3 py-2 text-xs font-medium">
+            <summary className="cursor-pointer list-none rounded-lg border px-3 py-1.5 text-xs font-medium">
               Sections
             </summary>
             <nav
@@ -126,9 +215,17 @@ function Shell() {
                   {destination.label}
                 </a>
               ))}
+              <div className="my-1 border-t" />
+              <a
+                href="/settings"
+                className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent"
+              >
+                Settings &amp; Sources
+              </a>
             </nav>
           </details>
         </header>
+
         <main className="flex-1 p-4 md:p-6">
           <Outlet />
         </main>

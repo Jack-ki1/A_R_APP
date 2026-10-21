@@ -1,31 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Panel } from "@/components/br-ui";
-import { getModelMetadata, predictAllArtists } from "@/lib/ml.functions";
-import { myRolesQuery } from "@/lib/artists";
+import { getModelMetadata } from "@/lib/ml.functions";
 
 export function PredictionsSection() {
-  const queryClient = useQueryClient();
   const modelQuery = useQuery({
     queryKey: ["ml-model"],
     queryFn: () => getModelMetadata(),
     retry: false,
   });
-  const { data: membership } = useQuery(myRolesQuery);
-  const [runMessage, setRunMessage] = useState("");
-  const runMutation = useMutation({
-    mutationFn: () => predictAllArtists(),
-    onSuccess: (result) => {
-      setRunMessage(`Predictions generated for ${result.count} artists.`);
-      queryClient.invalidateQueries({ queryKey: ["ml_predictions"] });
-      queryClient.invalidateQueries({ queryKey: ["artist"] });
-    },
-    onError: (cause: Error) => setRunMessage(cause.message),
-  });
-  const canRun = membership?.roles.some(
-    (r) => r === "admin" || r === "head_of_ar" || r === "analyst",
-  );
 
   return (
     <div className="space-y-4">
@@ -95,37 +77,17 @@ export function PredictionsSection() {
         )}
       </Panel>
       <Panel
-        title="Run predictions"
-        sub="Generate a breakout score for every artist in the workspace using the baseline model."
+        title="Predictive scoring operations"
+        sub="Governance policy: Bulk operational scoring from synthetic models is locked."
       >
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            disabled={!canRun || runMutation.isPending}
-            onClick={() => {
-              setRunMessage("");
-              runMutation.mutate();
-            }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50"
-          >
-            {runMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Sparkles className="size-4" />
-            )}
-            Generate predictions for all artists
-          </button>
-          {!canRun && (
-            <span className="text-xs text-muted-foreground">
-              Analyst, Head of A&R, or Admin access is required.
-            </span>
-          )}
-        </div>
-        {runMessage && (
-          <p role="status" className="mt-3 text-sm text-muted-foreground">
-            {runMessage}
+        <div className="rounded-lg border border-amber/30 bg-amber/5 p-4 text-xs">
+          <div className="font-semibold text-amber">Operational scoring disabled</div>
+          <p className="mt-1 text-muted-foreground leading-relaxed">
+            Per A&amp;R evidence governance policy, synthetic models cannot be used to generate
+            operational scores or influence signing decisions. View model status and validation
+            criteria under <strong>Evaluate → Predict</strong>.
           </p>
-        )}
+        </div>
       </Panel>
       <Panel title="Readiness gates for an operational model">
         <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">

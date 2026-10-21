@@ -12,9 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAnalyseRouteImport } from './routes/_authenticated/analyse'
 import { Route as AuthenticatedAudienceRouteImport } from './routes/_authenticated/audience'
+import { Route as AuthenticatedDecideRouteImport } from './routes/_authenticated/decide'
+import { Route as AuthenticatedDevelopRouteImport } from './routes/_authenticated/develop'
 import { Route as AuthenticatedDevelopmentRouteImport } from './routes/_authenticated/development'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
+import { Route as AuthenticatedEvaluateRouteImport } from './routes/_authenticated/evaluate'
 import { Route as AuthenticatedIntegrityRouteImport } from './routes/_authenticated/integrity'
 import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
@@ -36,9 +40,24 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAnalyseRoute = AuthenticatedAnalyseRouteImport.update({
+  id: '/analyse',
+  path: '/analyse',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAudienceRoute = AuthenticatedAudienceRouteImport.update({
   id: '/audience',
   path: '/audience',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDecideRoute = AuthenticatedDecideRouteImport.update({
+  id: '/decide',
+  path: '/decide',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDevelopRoute = AuthenticatedDevelopRouteImport.update({
+  id: '/develop',
+  path: '/develop',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDevelopmentRoute =
@@ -50,6 +69,11 @@ const AuthenticatedDevelopmentRoute =
 const AuthenticatedDiscoverRoute = AuthenticatedDiscoverRouteImport.update({
   id: '/discover',
   path: '/discover',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEvaluateRoute = AuthenticatedEvaluateRouteImport.update({
+  id: '/evaluate',
+  path: '/evaluate',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedIntegrityRoute = AuthenticatedIntegrityRouteImport.update({
@@ -86,9 +110,13 @@ const AuthenticatedArtistsIdRoute = AuthenticatedArtistsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/analyse': typeof AuthenticatedAnalyseRoute
   '/audience': typeof AuthenticatedAudienceRoute
+  '/decide': typeof AuthenticatedDecideRoute
+  '/develop': typeof AuthenticatedDevelopRoute
   '/development': typeof AuthenticatedDevelopmentRoute
   '/discover': typeof AuthenticatedDiscoverRoute
+  '/evaluate': typeof AuthenticatedEvaluateRoute
   '/integrity': typeof AuthenticatedIntegrityRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/radar': typeof AuthenticatedRadarRoute
@@ -99,9 +127,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/analyse': typeof AuthenticatedAnalyseRoute
   '/audience': typeof AuthenticatedAudienceRoute
+  '/decide': typeof AuthenticatedDecideRoute
+  '/develop': typeof AuthenticatedDevelopRoute
   '/development': typeof AuthenticatedDevelopmentRoute
   '/discover': typeof AuthenticatedDiscoverRoute
+  '/evaluate': typeof AuthenticatedEvaluateRoute
   '/integrity': typeof AuthenticatedIntegrityRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/radar': typeof AuthenticatedRadarRoute
@@ -114,9 +146,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/analyse': typeof AuthenticatedAnalyseRoute
   '/_authenticated/audience': typeof AuthenticatedAudienceRoute
+  '/_authenticated/decide': typeof AuthenticatedDecideRoute
+  '/_authenticated/develop': typeof AuthenticatedDevelopRoute
   '/_authenticated/development': typeof AuthenticatedDevelopmentRoute
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
+  '/_authenticated/evaluate': typeof AuthenticatedEvaluateRoute
   '/_authenticated/integrity': typeof AuthenticatedIntegrityRoute
   '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
@@ -129,9 +165,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/analyse'
     | '/audience'
+    | '/decide'
+    | '/develop'
     | '/development'
     | '/discover'
+    | '/evaluate'
     | '/integrity'
     | '/pipeline'
     | '/radar'
@@ -142,9 +182,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/analyse'
     | '/audience'
+    | '/decide'
+    | '/develop'
     | '/development'
     | '/discover'
+    | '/evaluate'
     | '/integrity'
     | '/pipeline'
     | '/radar'
@@ -156,9 +200,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/analyse'
     | '/_authenticated/audience'
+    | '/_authenticated/decide'
+    | '/_authenticated/develop'
     | '/_authenticated/development'
     | '/_authenticated/discover'
+    | '/_authenticated/evaluate'
     | '/_authenticated/integrity'
     | '/_authenticated/pipeline'
     | '/_authenticated/radar'
@@ -196,11 +244,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/analyse': {
+      id: '/_authenticated/analyse'
+      path: '/analyse'
+      fullPath: '/analyse'
+      preLoaderRoute: typeof AuthenticatedAnalyseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/audience': {
       id: '/_authenticated/audience'
       path: '/audience'
       fullPath: '/audience'
       preLoaderRoute: typeof AuthenticatedAudienceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/decide': {
+      id: '/_authenticated/decide'
+      path: '/decide'
+      fullPath: '/decide'
+      preLoaderRoute: typeof AuthenticatedDecideRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/develop': {
+      id: '/_authenticated/develop'
+      path: '/develop'
+      fullPath: '/develop'
+      preLoaderRoute: typeof AuthenticatedDevelopRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/development': {
@@ -215,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/discover'
       fullPath: '/discover'
       preLoaderRoute: typeof AuthenticatedDiscoverRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/evaluate': {
+      id: '/_authenticated/evaluate'
+      path: '/evaluate'
+      fullPath: '/evaluate'
+      preLoaderRoute: typeof AuthenticatedEvaluateRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/integrity': {
@@ -263,9 +339,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAnalyseRoute: typeof AuthenticatedAnalyseRoute
   AuthenticatedAudienceRoute: typeof AuthenticatedAudienceRoute
+  AuthenticatedDecideRoute: typeof AuthenticatedDecideRoute
+  AuthenticatedDevelopRoute: typeof AuthenticatedDevelopRoute
   AuthenticatedDevelopmentRoute: typeof AuthenticatedDevelopmentRoute
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
+  AuthenticatedEvaluateRoute: typeof AuthenticatedEvaluateRoute
   AuthenticatedIntegrityRoute: typeof AuthenticatedIntegrityRoute
   AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
@@ -275,9 +355,13 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAnalyseRoute: AuthenticatedAnalyseRoute,
   AuthenticatedAudienceRoute: AuthenticatedAudienceRoute,
+  AuthenticatedDecideRoute: AuthenticatedDecideRoute,
+  AuthenticatedDevelopRoute: AuthenticatedDevelopRoute,
   AuthenticatedDevelopmentRoute: AuthenticatedDevelopmentRoute,
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
+  AuthenticatedEvaluateRoute: AuthenticatedEvaluateRoute,
   AuthenticatedIntegrityRoute: AuthenticatedIntegrityRoute,
   AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,

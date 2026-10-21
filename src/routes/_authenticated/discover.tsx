@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/discover")({
       { name: "description", content: "Find artists, filter the cohort, and browse the roster." },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { q?: string | undefined } => ({
     q: typeof s["q"] === "string" ? s["q"] : undefined,
   }),
   loader: ({ context }) =>

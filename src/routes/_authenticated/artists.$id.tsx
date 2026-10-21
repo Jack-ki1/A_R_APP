@@ -139,6 +139,38 @@ function ArtistPage() {
         </div>
       </section>
 
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-panel p-2.5 text-xs">
+        <span className="font-semibold text-muted-foreground mr-1">A&amp;R Stage Actions:</span>
+        <Link
+          to="/analyse"
+          search={{ tab: "overview", artistId: a.id }}
+          className="rounded-lg border px-2.5 py-1 text-muted-foreground hover:bg-accent hover:text-foreground font-medium transition"
+        >
+          Analyse Trajectory →
+        </Link>
+        <Link
+          to="/evaluate"
+          search={{ tab: "artistry", artistId: a.id }}
+          className="rounded-lg border px-2.5 py-1 text-muted-foreground hover:bg-accent hover:text-foreground font-medium transition"
+        >
+          Artistic Review →
+        </Link>
+        <Link
+          to="/decide"
+          search={{ tab: "pipeline", artistId: a.id }}
+          className="rounded-lg border px-2.5 py-1 text-muted-foreground hover:bg-accent hover:text-foreground font-medium transition"
+        >
+          Decide &amp; Pipeline →
+        </Link>
+        <Link
+          to="/develop"
+          search={{ tab: "programs", artistId: a.id }}
+          className="rounded-lg border px-2.5 py-1 text-muted-foreground hover:bg-accent hover:text-foreground font-medium transition"
+        >
+          Develop Roadmap →
+        </Link>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {SCORE_LABELS.map(([k, l]) => (
           <div key={k} className="panel flex items-center gap-3 p-3">
