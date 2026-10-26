@@ -1,0 +1,1 @@
+The same app as one self-contained React file (React is the only dependency). Drop it into any React project, or open it as an artifact preview. The modular project in `../src` is the maintained version; this file is generated from the same source.
